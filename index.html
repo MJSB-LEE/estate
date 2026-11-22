@@ -2726,6 +2726,22 @@ async function downloadMissingPhotos() {        // keep a copy of every photo on
   } finally { dlBusy = false; }
   if (!editMode) refreshActive();
 }
+async function relinkPhotos() {     // a visit/folder always lists every photo that belongs to it (an older copy saved on another device cannot drop them)
+  const own = {};
+  for (const p of await DB.all('photos')) (own[p.visitId] ||= []).push(p);
+  let ch = false, fch = false;
+  for (const v of [...visits, ...folders]) {
+    if (!own[v.id] || !canEdit(v)) continue;
+    const have = new Set(v.photoIds), extra = own[v.id].filter(p => !have.has(p.id)).sort((a, b) => (a.at || 0) - (b.at || 0));
+    if (!extra.length) continue;
+    v.photoIds.push(...extra.map(p => p.id)); v.updatedAt = Date.now();
+    if (!v.unsaved && v.status === 'synced') v.status = 'pending';
+    if (v.isFolder) fch = true; else await DB.put('visits', v);
+    ch = true;
+  }
+  if (fch) await DB.put('settings', folders.map(f => ({ ...f })), 'folders');
+  return ch;
+}
 async function cloudSync(manual = false) {
   if (!cloudOn() || cloudBusy || !me) return;
   if (!navigator.onLine) { if (manual) toast(T('noNet')); return; }
@@ -2736,8 +2752,10 @@ async function cloudSync(manual = false) {
     await flushSave();
     let res = { changed: false };
     if (!cloud.linked) res = await cloudPull(token);        // joining: take the shared data first
+    await relinkPhotos();
     await cloudPush(token);
     const r2 = await cloudPull(token);
+    if (await relinkPhotos()) { r2.changed = true; scheduleCloud(1500); }
     if ((res.changed || r2.changed) && !editMode && !document.querySelector('dialog[open]')) refreshActive();
     if (res.needPhotos || r2.needPhotos) downloadMissingPhotos();
   } catch (e) {
@@ -2753,6 +2771,7 @@ async function cloudSync(manual = false) {
   folders = (await DB.get('settings', 'folders')) || [];
   cloud = { ...cloud, ...(await DB.get('settings', 'cloud') || {}) };
   await loadVisits();
+  await relinkPhotos().catch(() => {});      // bring back photos that lost their place in a visit
   if (!settings.fixCopy1) {      // earlier versions could upload the grey "not downloaded yet" picture to Drive: send every visit again once
     for (const v of visits) if (!v.unsaved && v.status === 'synced') { v.status = 'pending'; await DB.put('visits', v); }
     folders.forEach(f => { if (f.status === 'synced') f.status = 'pending'; });
