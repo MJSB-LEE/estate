@@ -788,7 +788,7 @@ const STR = {
     makingPdf: 'Menjana PDF…', pdfOk: 'PDF berjaya dijana ✓', pdfFail: m => 'Gagal jana PDF: ' + m,
     delVisitQ: n => `Padam lawatan "${n}" dan semua gambarnya dari peranti ini?`, deleted: 'Lawatan dipadam.',
     noSyncSet: 'Sync belum disetkan (Tetapan). Data selamat dalam peranti ini.', noNet: 'Tiada internet. Akan sync bila ada sambungan.',
-    allSynced: 'Semua sudah sync ✓', syncFail: m => 'Sync gagal: ' + m, syncOk: n => `☁️ ${n} lawatan disync ke Google Drive ✓`,
+    allSynced: 'Semua sudah sync ✓', syncFail: m => 'Sync gagal: ' + m, oldScript: 'Skrip Google Drive perlu dikemas kini: tampal google-drive-sync.gs baharu, kemudian Deploy → Manage deployments → New version.', syncOk: n => `☁️ ${n} lawatan disync ke Google Drive ✓`,
     markedDone: 'Ditanda siap ⏳. Sync belum disetkan — data selamat dalam peranti ini.',
     logoSaved: 'Logo disimpan ✓', logoReset: 'Logo asal digunakan ✓', settingsSaved: 'Tetapan disimpan ✓',
     connOk: 'Sambungan berjaya ✓', connFail: m => 'Gagal: ' + m, noData: 'Tiada data untuk bulan ini.',
@@ -879,7 +879,7 @@ const STR = {
     makingPdf: 'Creating PDF…', pdfOk: 'PDF created ✓', pdfFail: m => 'PDF failed: ' + m,
     delVisitQ: n => `Delete visit "${n}" and all its photos from this device?`, deleted: 'Visit deleted.',
     noSyncSet: 'Sync not set up (Settings). Data is safe on this device.', noNet: 'No internet. Will sync when connected.',
-    allSynced: 'Everything is synced ✓', syncFail: m => 'Sync failed: ' + m, syncOk: n => `☁️ ${n} visit(s) synced to Google Drive ✓`,
+    allSynced: 'Everything is synced ✓', syncFail: m => 'Sync failed: ' + m, oldScript: 'The Google Drive script needs updating: paste the new google-drive-sync.gs, then Deploy → Manage deployments → New version.', syncOk: n => `☁️ ${n} visit(s) synced to Google Drive ✓`,
     markedDone: 'Marked done ⏳. Sync not set up — data is safe on this device.',
     logoSaved: 'Logo saved ✓', logoReset: 'Default logo restored ✓', settingsSaved: 'Settings saved ✓',
     connOk: 'Connection OK ✓', connFail: m => 'Failed: ' + m, noData: 'No data for this month.',
@@ -2124,16 +2124,34 @@ async function post(body) {
 const b64 = async blob => (await blobToDataURL(blob)).split(',')[1];
 const textB64 = s => btoa(unescape(encodeURIComponent(s)));
 function queueTrash(id) { (settings.trashQ ||= []).push(id); saveSettings(); }
+let scriptV = 0;
+class NotReady extends Error {}
+async function needPhoto(pid) {          // a real photo (not the grey "not downloaded yet" picture), or wait
+  const p = await getPhoto(pid);
+  if (!p || !p.blob || p.blob === PH_BLOB) throw new NotReady(pid);   // try again later, never send the grey picture
+  return p;
+}
+async function drivePhoto(base, pid, name) {   // upload each photo once; the visit folder gets a copy made inside Google Drive
+  let fid = cloud.drive[pid];
+  if (!fid) {
+    const p = await getPhoto(pid), bl = p && p.blob !== PH_BLOB ? p.blob : null;
+    if (!bl) throw new NotReady(pid);
+    const r = await post({ action: 'put', id: pid, mime: bl.type || 'image/jpeg', data: await b64(bl) });
+    if (!r.fileId) throw new Error(T('oldScript'));
+    fid = cloud.drive[pid] = r.fileId; await saveCloud();
+  }
+  await post({ ...base, action: 'copy', name, fileId: fid });
+}
 async function syncFolder(f) {
   const L = PDF_STR[settings.pdfLang];
   const base = { visitId: f.id, folderName: `WAITING ${f.ladang} ${f.docNo}`.replace(/\//g, '-') };
   const keep = [];
   const info = `Photo folder (waiting to attach)\nRef: ${f.docNo}\n${L.loc}: ${f.ladang}\nNote: ${f.note || '-'}\nBy: ${f.createdBy || '-'} (${fmtStamp(f.createdAt)})\n`;
+  for (const pid of f.photoIds) await needPhoto(pid);
   await post({ ...base, action: 'file', name: 'info.txt', mime: 'text/plain', data: textB64(info) }); keep.push('info.txt');
   for (let i = 0; i < f.photoIds.length; i++) {
-    const p = await getPhoto(f.photoIds[i]); if (!p) continue;
     const name = `${L.photo}_${String(i + 1).padStart(2, '0')}.jpg`;
-    await post({ ...base, action: 'file', name, mime: 'image/jpeg', data: await b64(p.blob) }); keep.push(name);
+    await drivePhoto(base, f.photoIds[i], name); keep.push(name);
   }
   await post({ ...base, action: 'cleanup', keep });
 }
@@ -2142,13 +2160,13 @@ async function syncVisit(v) {
   const folderName = `${v.tarikh} ${v.docNo || ''} ${v.ladang || 'Estate'} - ${v.pegawai || ''} (${v.id.slice(-4)})`.replace(/\s+/g, ' ');
   const base = { visitId: v.id, folderName };
   const keep = [], photos = [];
-  for (const pid of v.photoIds) photos.push(await getPhoto(pid));
+  for (const pid of v.photoIds) photos.push(await needPhoto(pid));
   let info = `${v.title}\n${settings.rev}\nNo: ${v.docNo || '-'}\n\n${L.date}: ${fmtDate(v.tarikh)}\nOfficer/Pegawai: ${v.pegawai}\n${L.loc}: ${v.ladang}\n${v.note ? 'Note: ' + v.note + '\n' : ''}Created by: ${v.createdBy || '-'} (${fmtStamp(v.createdAt)})\n\n`;
   photos.forEach((p, i) => info += `${L.photo} ${i + 1}: ${p.caption || '-'}\n`);
   await post({ ...base, action: 'file', name: 'info.txt', mime: 'text/plain', data: textB64(info) }); keep.push('info.txt');
   for (let i = 0; i < photos.length; i++) {
     const name = `${L.photo}_${String(i + 1).padStart(2, '0')}.jpg`;
-    await post({ ...base, action: 'file', name, mime: 'image/jpeg', data: await b64(photos[i].blob) }); keep.push(name);
+    await drivePhoto(base, photos[i].id, name); keep.push(name);
   }
   if (window.jspdf && v.ladang && v.pegawai) {
     const doc = await buildPDF(v), name = pdfName(v);
@@ -2166,13 +2184,16 @@ async function syncAll(manual = false) {
   if (!todo.length && !trash.length) { if (manual) toast(T('allSynced')); return; }
   syncing = true; updateNet();
   let ok = 0;
+  try { if (!scriptV) { const r = await post({ action: 'ping' }); scriptV = r.v || 1; } }
+  catch (e) { syncing = false; updateNet(); toast(T('syncFail', e.message), 4000); return; }
+  if (scriptV < 3) { syncing = false; updateNet(); toast(T('oldScript'), 7000); return; }
   try { for (const id of trash) { await post({ action: 'trash', visitId: id }); settings.trashQ = settings.trashQ.filter(x => x !== id); } await saveSettings(); }
   catch (e) { syncing = false; updateNet(); toast(T('syncFail', e.message), 4000); return; }
   for (const v of todo) {
     if (v.isFolder) {
       const stamp = v.updatedAt;
       try { await syncFolder(v); if (v.updatedAt === stamp && folders.includes(v)) { v.status = 'synced'; v.syncedAt = Date.now(); await saveFolders(); } ok++; }
-      catch (e) { toast(T('syncFail', e.message), 4000); break; }
+      catch (e) { if (e instanceof NotReady) continue; toast(T('syncFail', e.message), 4000); break; }
       continue;
     }
     const stamp = v.updatedAt;
@@ -2180,7 +2201,7 @@ async function syncAll(manual = false) {
       await syncVisit(v);
       if (v.updatedAt === stamp) { v.status = 'synced'; v.syncedAt = Date.now(); logEv(v, 'synced'); await DB.put('visits', v); }
       ok++;
-    } catch (e) { toast(T('syncFail', e.message), 4000); break; }
+    } catch (e) { if (e instanceof NotReady) continue; toast(T('syncFail', e.message), 4000); break; }
   }
   syncing = false; updateNet(); refreshActive();
   if (ok) toast(T('syncOk', ok));
@@ -2608,8 +2629,8 @@ async function cloudPush(token) {
     if (d.kind === 'settings' && !cloud.linked) continue;
     if (d.kind === 'photo' && !d.data.driveId) {          // upload the picture to Google Drive first
       if (!settings.syncUrl || !d.rec.blob) continue;
-      try { const r = await post({ action: 'put', id: d.id, mime: d.rec.blob.type || 'image/jpeg', data: await b64(d.rec.blob) }); cloud.drive[d.id] = r.fileId; d.data.driveId = r.fileId; await saveCloud(); }
-      catch (e) { continue; }
+      try { const r = await post({ action: 'put', id: d.id, mime: d.rec.blob.type || 'image/jpeg', data: await b64(d.rec.blob) }); if (!r.fileId) throw new Error('old'); cloud.drive[d.id] = r.fileId; d.data.driveId = r.fileId; await saveCloud(); }
+      catch (e) { if (!cloudWarned) { cloudWarned = true; toast(T('oldScript'), 7000); } continue; }
     }
     send.push({ kind: d.kind, id: d.id, data: d.extra ? { ...d.data, ...d.extra } : d.data, updated_at: d.at || Date.now(), deleted: false, _key: key, _sig: sig(d.data), _ref: d.ref });
   }
@@ -2732,6 +2753,12 @@ async function cloudSync(manual = false) {
   folders = (await DB.get('settings', 'folders')) || [];
   cloud = { ...cloud, ...(await DB.get('settings', 'cloud') || {}) };
   await loadVisits();
+  if (!settings.fixCopy1) {      // earlier versions could upload the grey "not downloaded yet" picture to Drive: send every visit again once
+    for (const v of visits) if (!v.unsaved && v.status === 'synced') { v.status = 'pending'; await DB.put('visits', v); }
+    folders.forEach(f => { if (f.status === 'synced') f.status = 'pending'; });
+    await DB.put('settings', folders.map(f => ({ ...f })), 'folders');
+    settings.fixCopy1 = 1; await DB.put('settings', settings, 'main');
+  }
   // upgrade older records
   for (const v of [...visits].reverse()) {
     let ch = false;
