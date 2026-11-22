@@ -1,0 +1,2439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1e40af">
+<title>Lawatan Ladang</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --blue:#1e40af; --blue-d:#1e3a8a; --blue-l:#eaf0ff; --blue-b:#c7d4fb;
+    --ink:#1f2937; --muted:#6b7280; --line:#e3e7ee; --bg:#f7f8fb; --head:#eef1f6;
+    --red:#c62828; --amber:#b45309; --green:#15803d;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;display:flex;flex-direction:column}
+  button{font:inherit;cursor:pointer;border:0;border-radius:8px;padding:9px 14px;font-weight:600}
+  input,select,textarea{font:inherit;color:inherit}
+  .btn{background:var(--blue);color:#fff}
+  .btn:hover{background:var(--blue-d)}
+  .btn-ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .btn-ghost:hover{background:var(--blue-l)}
+  .btn-danger{background:#fff;color:var(--red);border:1px solid #f3c6c6}
+  .btn-danger:hover{background:#fdecec}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .f-in{width:100%;padding:9px 12px;border:1px solid #cfd6e1;border-radius:8px;background:#fff}
+  .f-in:focus{outline:2px solid var(--blue);border-color:transparent}
+  label.f{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+
+  /* Top bar */
+  .top{background:var(--blue);color:#fff;display:flex;align-items:center;gap:12px;padding:10px 16px;flex:none}
+  .top .logo{background:#fff;border-radius:8px;height:40px;min-width:40px;display:flex;align-items:center;justify-content:center;padding:3px 6px}
+  .top .logo img{height:32px}
+  .top h1{margin:0;font-size:17px;font-weight:800;letter-spacing:.3px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .top .pill{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.18);white-space:nowrap}
+  .top .pill.off{background:#fbbf24;color:#3b2500}
+  .lang{display:flex;border:1px solid rgba(255,255,255,.5);border-radius:999px;overflow:hidden}
+  .lang button{padding:3px 10px;border-radius:0;font-size:12px;background:transparent;color:#fff}
+  .lang button.on{background:#fff;color:var(--blue)}
+  #btnMenu{display:none;background:transparent;color:#fff;font-size:22px;padding:2px 6px}
+
+  /* Shell */
+  .shell{flex:1;display:flex;min-height:0}
+  .side{width:230px;flex:none;background:#fff;border-right:1px solid var(--line);padding:14px 0;overflow:auto}
+  .side .sec{font-size:12px;color:var(--muted);padding:14px 12px 6px;letter-spacing:.5px}
+  .side a{display:flex;align-items:center;gap:10px;padding:10px 14px;margin:2px 8px;border-radius:8px;color:var(--ink);text-decoration:none;cursor:pointer;border:1px solid transparent}
+  .side a:hover{background:#f3f6fb}
+  .side a.on{background:var(--blue-l);border-color:var(--blue-b);color:var(--blue);font-weight:600}
+  .side .cnt{margin-left:auto;font-size:11px;background:#fde68a;color:#7c4a03;border-radius:999px;padding:1px 7px;font-weight:700}
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .tabs{display:flex;gap:4px;padding:10px 14px 0;background:#e9edf4;overflow-x:auto;flex:none}
+  .tab{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px 8px 0 0;background:#f4f6fa;color:var(--muted);cursor:pointer;white-space:nowrap;font-size:14px;border:1px solid var(--line);border-bottom:0}
+  .tab.on{background:var(--bg);color:var(--ink);font-weight:600}
+  .tab .x{color:#9aa3af;font-size:13px;padding:0 2px}
+  .tab .x:hover{color:var(--red)}
+  .content{flex:1;overflow:auto;padding:18px}
+  .page{display:none;max-width:1400px}
+  .page.on{display:block}
+
+  @media (max-width:860px){
+    #btnMenu{display:block}
+    .side{position:fixed;top:60px;bottom:0;left:0;z-index:40;transform:translateX(-100%);transition:transform .2s;box-shadow:2px 0 12px rgba(0,0,0,.12)}
+    .side.open{transform:none}
+    .top .pill{font-size:11px;padding:3px 8px}
+    .top h1{font-size:14px}
+    .content{padding:12px}
+  }
+
+  /* Common */
+  .bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:12px 0}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px}
+  .card h2{margin:0 0 12px;font-size:16px}
+  .muted{color:var(--muted)}
+  .small{font-size:12px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .stat .n{font-size:28px;font-weight:800;color:var(--blue)}
+  .stat .l{font-size:13px;color:var(--muted)}
+  .stat.warn .n{color:var(--amber)}
+
+  table.tbl{width:100%;border-collapse:collapse;background:#fff}
+  .tbl th{background:var(--head);text-align:left;font-weight:600;font-size:14px;color:#374151;padding:12px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+  .tbl td{padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .tbl tr:hover td{background:#fafbfe}
+  .tbl .doc{color:var(--red);font-weight:600;cursor:pointer;white-space:nowrap}
+  .tbl tbody tr.click{cursor:pointer}
+  .tbl tbody tr.click:hover td{background:#eef3ff}
+  .tbl .doc:hover{text-decoration:underline}
+  .tbl .num{text-align:right}
+  .tbl tfoot td{font-weight:700;background:#f8fafc}
+  .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+  .cnt-btn{border:1px solid #cfd6e1;background:#fff;padding:4px 14px;font-size:13px;border-radius:6px}
+  .cnt-btn:hover{background:var(--blue-l)}
+  .sub td{background:#fbfcff !important;padding:10px}
+  .thumbs{display:flex;gap:10px;flex-wrap:wrap}
+  .thumbs figure{margin:0;width:120px}
+  .thumbs img{width:120px;height:90px;object-fit:cover;border-radius:6px;border:1px solid var(--line);display:block}
+  .thumbs figcaption{font-size:11px;color:var(--muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
+  .b-draft{background:#eef0f3;color:var(--muted)}
+  .b-pending{background:#fef3c7;color:var(--amber)}
+  .b-synced{background:#dcfce7;color:var(--green)}
+  .foot{margin-top:12px;color:var(--muted)}
+  .row-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+  /* Photos page */
+  .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+  .gal .it{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer}
+  .gal .it:hover{border-color:var(--blue)}
+  .gal img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#eef1f6}
+  .gal .cap{padding:8px 10px;font-size:13px}
+  .gal .cap b{color:var(--red)}
+
+  /* Editor */
+  .doc-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .doc-head h2{margin:0;font-size:20px}
+  .doc-head .docno{color:var(--red)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:640px){ .grid2{grid-template-columns:1fr} }
+  .edcol{display:flex;flex-direction:column;gap:16px}
+  .drop{border:2px dashed #cfd6e1;border-radius:10px;padding:16px;text-align:center;color:var(--muted);background:#fafbfe}
+  .drop.over{border-color:var(--blue);background:var(--blue-l)}
+  .drop .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+  #photoGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:14px}
+  .ph{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;display:flex;flex-direction:column}
+  .ph-img{position:relative;aspect-ratio:4/3;background:#eef1f6;overflow:hidden}
+  .ph-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+  /* doc view (like Papan) */
+  .doc-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:14px}
+  .doc-bar .dn{font-weight:800;color:var(--red);font-size:18px}
+  .doc-bar .spacer{flex:1}
+  .docview{display:grid;grid-template-columns:minmax(0,620px) minmax(0,1fr);gap:18px;align-items:start}
+  @media (max-width:1100px){ .docview{grid-template-columns:1fr} }
+  .sheets{background:#e5e9f0;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:14px}
+  .sheet{background:#fff;aspect-ratio:210/297;container-type:inline-size;box-shadow:0 2px 8px rgba(0,0,0,.12);font-family:Helvetica,Arial,sans-serif;color:#000}
+  .sheet-in{position:relative;height:100%;padding:5.5cqw 9.7cqw 9cqw;display:flex;flex-direction:column}
+  .sh-head{position:relative;height:16cqw;margin-top:-2cqw}
+  .sh-head img{position:absolute;left:0;top:0;max-width:12cqw;max-height:12cqw}
+  .sh-rev{position:absolute;right:0;top:0;font-size:1.6cqw}
+  .sh-title{text-align:center;font-weight:700;font-size:3.3cqw;padding-top:2.4cqw}
+  .sh-off{text-align:center;font-size:2.8cqw;margin-top:1cqw}
+  .sh-meta{font-size:2.8cqw;line-height:1.45;margin-top:1cqw;display:flex;justify-content:space-between;align-items:flex-end}
+  .sh-meta .no{font-size:2.1cqw}
+  .sh-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(2,52cqw);gap:3.8cqw;margin-top:3cqw}
+  .sh-box{display:flex;flex-direction:column;min-height:0}
+  .sh-img{flex:0 0 38cqw;position:relative}
+  .sh-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+  .sh-lbl{text-align:center;font-weight:700;font-size:2.6cqw;margin-top:1.4cqw}
+  .sh-cap{font-size:2.4cqw;margin-top:.8cqw;padding:0 2cqw;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+  .sh-foot{position:absolute;left:9.7cqw;right:9.7cqw;bottom:2.4cqw;border-top:1px solid #999;text-align:center;font-size:1.9cqw;padding-top:1.4cqw}
+  .sidecol{display:flex;flex-direction:column;gap:14px}
+  .next{border-color:#fcd9a8;background:#fffaf2}
+  .next.ok{border-color:#bbf7d0;background:#f3fdf6}
+  .next h2{display:flex;align-items:center;gap:8px}
+  .next p{margin:0 0 12px;color:var(--muted)}
+  .tl{list-style:none;margin:0;padding:0}
+  .tl li{display:flex;gap:10px;align-items:baseline;padding:9px 0;border-bottom:1px dashed var(--line);flex-wrap:wrap}
+  .tl li:last-child{border-bottom:0}
+  .tl .dot{width:9px;height:9px;border-radius:50%;background:#9ca3af;flex:none;transform:translateY(-1px)}
+  .tl .dot.g{background:var(--green)} .tl .dot.b{background:var(--blue)} .tl .dot.a{background:var(--amber)}
+  .tl b{min-width:140px}
+  .vthumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:12px}
+  .vthumbs .t{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#eef1f6;cursor:pointer}
+  .vthumbs img{width:100%;height:100%;object-fit:cover}
+  .vthumbs span{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:3px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* pop-ups */
+  .pop{border:0;padding:0;border-radius:14px;width:min(1100px,96vw);max-height:94vh;overflow:hidden;display:flex;flex-direction:column}
+  .pop:not([open]){display:none}
+  .pop-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:#fff;flex-wrap:wrap}
+  .pop-head h3{margin:0;font-size:16px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pop-head .x{background:#f1f4f9;font-size:16px;padding:6px 12px}
+  .viewer{background:#111;position:relative;display:flex;align-items:center;justify-content:center;height:min(70vh,760px)}
+  .viewer img{max-width:100%;max-height:100%;object-fit:contain}
+  .viewer .nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.85);font-size:22px;width:48px;height:48px;border-radius:50%;padding:0}
+  .viewer .nav:hover{background:#fff}
+  .viewer .nav.l{left:12px} .viewer .nav.r{right:12px}
+  .viewer .count{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:13px;padding:4px 12px;border-radius:999px}
+  .vcap{padding:12px 16px;background:#fff;font-size:15px;min-height:46px}
+  .vstrip{display:flex;gap:6px;padding:0 16px 14px;background:#fff;overflow-x:auto}
+  .vstrip img{width:64px;height:48px;object-fit:cover;border-radius:6px;cursor:pointer;opacity:.55;border:2px solid transparent;flex:none}
+  .vstrip img.on{opacity:1;border-color:var(--blue)}
+  .pv-body{overflow:auto;background:#e5e9f0;padding:16px;flex:1}
+  .pv-body .sheet{max-width:640px;margin:0 auto 16px}
+  /* ===== Papan-style photos ===== */
+  .thumbs{display:flex;flex-wrap:wrap;gap:10px}
+  .th{position:relative;width:120px;height:120px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#f1f5f9;cursor:pointer;flex:none}
+  .th img{width:100%;height:100%;object-fit:cover;display:block}
+  .th .cap{position:absolute;left:0;right:0;bottom:0;background:rgba(15,23,42,.65);color:#fff;font-size:10px;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .th .num{position:absolute;top:4px;left:4px;background:rgba(255,255,255,.9);color:var(--ink);font-size:11px;font-weight:700;border-radius:999px;padding:0 7px}
+  .fref{font-weight:600;font-size:13px;margin:6px 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .fref .muted{font-weight:normal}
+  .sm{padding:4px 9px;font-size:12px;border-radius:6px;font-weight:600}
+  .btnlike{display:inline-flex;align-items:center;gap:6px;cursor:pointer;border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:9px 14px;font-weight:600}
+  .btnlike:hover{background:#f1f5f9}
+  .etiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+  .etile{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;cursor:pointer}
+  .etile:hover{border-color:#93c5fd;background:#f8fbff}
+  .etile b{font-size:15px}
+  .eic{font-size:34px;line-height:1}
+  .crumbs{font-size:14px}
+  .crumbs a{color:var(--blue);cursor:pointer}
+  .crumbs a:hover{text-decoration:underline}
+  .folds{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+  .fold{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px;background:#fff;cursor:pointer}
+  .fold:hover{border-color:#93c5fd;background:#f8fbff}
+  .fold.on{outline:2px solid var(--blue)}
+  .fcover{width:64px;height:64px;border-radius:8px;overflow:hidden;background:#f1f5f9;flex:none;display:flex;align-items:center;justify-content:center;font-size:26px}
+  .fcover img{width:100%;height:100%;object-fit:cover}
+  .fmeta{display:flex;flex-direction:column;gap:2px;font-size:12.5px;min-width:0}
+  .fmeta span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fmeta b{color:var(--red)}
+  .attrow{display:flex;gap:10px;align-items:center;border:1px dashed #93c5fd;border-radius:10px;padding:8px;background:#f8fbff;margin-bottom:8px}
+  .attrow .fmeta{flex:1}
+  label.attrow{cursor:pointer}
+  label.attrow input[type=checkbox]{width:22px;height:22px;flex:none;accent-color:var(--blue);cursor:pointer}
+  label.attrow.on{border-style:solid;border-color:#86efac;background:#f0fdf4}
+  .att-h{font-size:13px;font-weight:600;margin:4px 0 8px;color:var(--ink)}
+  details.newph summary{cursor:pointer;color:var(--muted);margin:8px 0;list-style:none}
+  details.newph summary::-webkit-details-marker{display:none}
+  details.newph[open] summary{margin-bottom:10px}
+  .fold.wait{border-style:dashed;border-color:#93c5fd;background:#f8fbff}
+  .th .thx{position:absolute;top:3px;right:3px;background:rgba(255,255,255,.92);color:var(--red);border-radius:999px;width:22px;height:22px;padding:0;font-size:14px;line-height:22px}
+  .bdg-w{color:#92400e;background:#fef3c7;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px}
+  .bdg-ok{color:#166534;background:#dcfce7;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px}
+  /* lightbox */
+  #lb{position:fixed;inset:0;background:rgba(2,6,23,.88);z-index:150;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:10px}
+  #lb[hidden]{display:none}
+  #lb img{max-width:100%;max-height:78vh;border-radius:6px;background:#fff}
+  #lb .cap{color:#e2e8f0;font-size:13.5px;text-align:center;max-width:900px}
+  #lb .lbbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  #lb .lbbar button{background:#fff;color:var(--ink);border:1px solid #cbd5e1;padding:7px 14px}
+  #lb .lbbar button.dan{color:var(--red);border-color:#fca5a5}
+  .lbnav{position:absolute;top:50%;transform:translateY(-50%);font-size:44px;line-height:1;padding:6px 16px 12px;border-radius:999px;background:rgba(255,255,255,.18);color:#fff;border:none;z-index:2}
+  .lbnav:hover{background:rgba(255,255,255,.35)}
+  .lbprev{left:16px}.lbnext{right:16px}
+  /* print photos dialog */
+  #pdlg{position:fixed;inset:0;background:rgba(2,6,23,.55);z-index:160;display:flex;align-items:center;justify-content:center;padding:16px}
+  #pdlg[hidden]{display:none}
+  .pdbox{background:#fff;border-radius:12px;padding:18px 20px;width:100%;max-width:440px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .pdbox h3{margin:0 0 6px;font-size:16px;display:flex;gap:8px}
+  .pdopts{display:flex;flex-wrap:wrap;gap:8px}
+  .pdopts label{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer}
+  .pdopts label:has(input:checked){border-color:var(--blue);background:#eff6ff}
+  @media (max-width:820px){ .th{width:96px;height:96px} .lbnav{font-size:34px;padding:4px 12px 8px} .lbprev{left:6px}.lbnext{right:6px} .etiles{grid-template-columns:repeat(2,minmax(0,1fr))} .etile{flex-direction:column;align-items:flex-start;gap:6px} .folds{grid-template-columns:minmax(0,1fr)} }
+  /* print area */
+  #print{display:none}
+  @media print{
+    @page{size:A4;margin:0}
+    body{background:#fff;display:block}
+    body > *:not(#print){display:none!important}
+    #print{display:block}
+    #print .sheet{width:210mm;height:297mm;box-shadow:none;margin:0;page-break-after:always;break-after:page}
+    #print .sheet:last-child{page-break-after:auto;break-after:auto}
+    @page port{size:A4 portrait;margin:0}
+    @page land{size:A4 landscape;margin:0}
+    #print .phs{box-sizing:border-box;padding:9mm;display:flex;flex-direction:column;gap:3mm;page-break-after:always;break-after:page;font-family:Arial,sans-serif;overflow:hidden}
+    #print .phs:last-child{page-break-after:auto;break-after:auto}
+    #print .phs.port{page:port;width:210mm;height:297mm}
+    #print .phs.land{page:land;width:297mm;height:210mm}
+    #print .phsh{display:flex;justify-content:space-between;font-size:9.5pt;border-bottom:1px solid #999;padding-bottom:1.5mm;flex:none}
+    #print .phg{flex:1;display:grid;gap:4mm;min-height:0}
+    #print .phg figure{margin:0;display:flex;flex-direction:column;align-items:center;min-height:0;min-width:0;overflow:hidden}
+    #print .phg img{flex:1;min-height:0;width:100%;object-fit:contain}
+    #print .phg figcaption{font-size:9pt;color:#222;margin-top:1.5mm;text-align:center;flex:none}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+  /* top bar user area */
+  .role-badge{border:1.5px solid #fff;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:800;letter-spacing:.5px}
+  .tb-user{font-size:14px;white-space:nowrap}
+  .tb-btn{background:rgba(255,255,255,.15);color:#fff;font-size:13px;padding:6px 12px;white-space:nowrap}
+  .tb-btn:hover{background:rgba(255,255,255,.28)}
+  .tb-btn.danger{background:#dc2626}
+  .tb-btn.danger:hover{background:#b91c1c}
+  @media (max-width:860px){ .tb-user,.role-badge,.tb-btn .tx{display:none} }
+  .ph-body{padding:10px;display:flex;flex-direction:column;gap:6px}
+  .ph-num{font-weight:700}
+  .ph-count{font-size:11px;color:var(--muted);text-align:right}
+  .ph-tools{display:flex;gap:4px}
+  .selbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:12px}
+  .selbar button:disabled{opacity:.45}
+  .ph-sel{position:absolute;top:8px;left:8px;z-index:2;background:rgba(255,255,255,.95);border-radius:6px;padding:4px;display:flex;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+  .ph-sel input{width:20px;height:20px;accent-color:var(--blue);cursor:pointer;margin:0}
+  .ph.sel{outline:3px solid var(--blue)}
+  .ph-mv{width:100%;margin-top:4px;background:#f1f4f9;font-size:13px;padding:7px 0}
+  .ph-mv:hover{background:var(--blue-l)}
+  .ph-tools button{flex:1;padding:7px 0;background:#f1f4f9;font-size:14px}
+  .ph-tools button:hover{background:var(--blue-l)}
+  .ph-tools button.del:hover{background:#fdecec}
+  .empty{color:var(--muted);text-align:center;padding:12px 0 0}
+  .actions{position:sticky;bottom:-18px;background:rgba(247,248,251,.96);backdrop-filter:blur(6px);padding:12px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line)}
+  .actions .spacer{flex:1}
+  #saveState{font-size:12px;color:var(--muted)}
+  @media (max-width:640px){
+    .actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;bottom:-12px}
+    .actions button{padding:9px 6px;font-size:13px}
+    .actions .spacer{display:none}
+    #saveState{grid-column:1/-1;text-align:center;order:-1}
+  }
+
+  /* Settings */
+  .stabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:2px solid var(--line);margin-bottom:14px}
+  .stabs button{background:transparent;border-radius:8px 8px 0 0;padding:10px 16px;color:var(--muted);font-weight:600;border-bottom:3px solid transparent;margin-bottom:-2px}
+  .stabs button:hover{color:var(--blue);background:#f3f6fb}
+  .stabs button.on{color:var(--blue);border-bottom-color:var(--blue)}
+  .spane{display:none}
+  .spane.on{display:block}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  @media (max-width:1000px){ .grid3{grid-template-columns:1fr} }
+  .req::after,.reqmark{content:" *";color:var(--red);font-weight:700}
+  .reqmark::after{content:none}
+  .le-row .def{font-size:10px;font-weight:700;background:var(--blue-l);color:var(--blue);border-radius:999px;padding:2px 6px;flex:none}
+  .set h3{margin:18px 0 10px;font-size:13px;letter-spacing:.6px;text-transform:uppercase;color:var(--blue)}
+  .set h3:first-child{margin-top:0}
+  .hint{font-size:12px;color:var(--muted);margin:4px 0 0}
+
+  .userchip{background:rgba(255,255,255,.18);color:#fff;font-size:13px;padding:5px 12px;border-radius:999px;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+  .userchip:hover{background:rgba(255,255,255,.3)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 8px;min-height:42px;cursor:text}
+  .chips:focus-within{outline:2px solid var(--blue);border-color:transparent}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--blue-l);color:var(--blue);border:1px solid var(--blue-b);border-radius:999px;padding:3px 6px 3px 10px;font-size:14px;font-weight:600}
+  .chip button{background:transparent;padding:0 4px;color:var(--blue);font-size:13px}
+  .chip button:hover{color:var(--red)}
+  .chips input{border:0;outline:0;flex:1;min-width:140px;padding:4px;background:transparent}
+  .login{position:fixed;inset:0;background:linear-gradient(160deg,#1e40af,#1e3a8a);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
+  .login[hidden]{display:none}
+  .login-card{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:460px;max-height:92vh;overflow:auto;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+  .login-card img{height:56px}
+  .login-lang{float:right;border-color:var(--line)}
+  .login-lang button{color:var(--muted)}
+  .login-lang button.on{background:var(--blue);color:#fff}
+  .login-card h2{margin:10px 0 2px;font-size:18px}
+  .users{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin:16px 0}
+  .users button{background:#f3f6fb;border:1px solid var(--line);padding:14px 8px;font-size:15px}
+  .users button:hover,.users button.sel{background:var(--blue-l);border-color:var(--blue);color:var(--blue)}
+  .users button .lock{font-size:11px;color:var(--muted);display:block;font-weight:500}
+  .login-row{display:flex;gap:8px;margin-top:10px}
+  .login-card form{text-align:left;display:flex;flex-direction:column;gap:12px;margin-top:16px}
+  .login-card .err{color:var(--red);font-size:13px;min-height:18px}
+  .chk{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+  .le{display:flex;flex-direction:column;gap:6px}
+  .le-row{display:flex;gap:6px;align-items:center}
+  .le-row .no{width:24px;text-align:right;color:var(--muted);font-size:12px;flex:none}
+  .le-row input{flex:1;min-width:0;padding:7px 10px}
+  .le-row input.code{flex:0 0 90px;text-transform:uppercase}
+  .le-row button{padding:6px 9px;background:#f1f4f9;font-size:13px;flex:none}
+  .le-row button:hover{background:var(--blue-l)}
+  .le-row button.del:hover{background:#fdecec;color:var(--red)}
+  .le-add{display:flex;gap:6px;margin-top:6px}
+  .le-add input{flex:1;min-width:0}
+  .le-add input.code{flex:0 0 90px;text-transform:uppercase}
+  .menu{position:fixed;top:56px;right:16px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.15);z-index:150;min-width:220px;padding:6px;display:none}
+  .menu.open{display:block}
+  .menu .who{padding:8px 12px;border-bottom:1px solid var(--line);margin-bottom:4px}
+  .menu button{display:block;width:100%;text-align:left;background:transparent;font-weight:500;padding:9px 12px}
+  .menu button:hover{background:var(--blue-l)}
+  body.phone .tbl th:nth-child(4), body.phone .tbl td:nth-child(4),
+  body.phone .tbl th:nth-child(7), body.phone .tbl td:nth-child(7),
+  body.phone .tbl th:nth-child(8), body.phone .tbl td:nth-child(8){display:none}
+  body.phone .tbl tr.sub td{display:table-cell!important}
+  body.phone .bar{grid-template-columns:1fr 1fr}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:100;max-width:90vw}
+  #toast.show{opacity:1}
+  dialog{border:0;border-radius:14px;padding:0;max-width:94vw}
+  dialog::backdrop{background:rgba(0,0,0,.5)}
+  .cam{background:#000;padding:12px;display:flex;flex-direction:column;gap:10px;align-items:center}
+  .cam video{max-width:100%;max-height:65vh;border-radius:8px}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <button id="btnMenu">☰</button>
+  <div class="logo"><img id="logoImg" alt="" src="logo.jpg" onerror="this.parentNode.style.display='none'"></div>
+  <h1 id="appTitle">MASIH JAYA GROUP — LAWATAN LADANG</h1>
+  <span id="netPill" class="pill">● Online</span>
+  <span class="role-badge" id="tbRole"></span>
+  <span class="tb-user"><span data-t="userLbl"></span>: <span id="userName"></span></span>
+  <button class="tb-btn" id="tbPass">🔑 <span class="tx" data-t="changePassShort"></span></button>
+  <button class="tb-btn" id="tbInstall" style="display:none">📲 <span class="tx" data-t="installApp"></span></button>
+  <button class="tb-btn danger" id="tbLogout">⎋ <span class="tx" data-t="logoutShort"></span></button>
+  <div class="lang"><button data-lang="ms">BM</button><button data-lang="en">EN</button></div>
+</div>
+
+<div class="shell">
+  <nav class="side" id="side">
+    <div class="sec" data-t="navMain"></div>
+    <a data-nav="home">🏠 <span data-t="home"></span></a>
+    <a data-nav="list">📋 <span data-t="visitList"></span> <span class="cnt" id="navPending" style="display:none"></span></a>
+    <a data-nav="photos">📷 <span data-t="photos"></span></a>
+    <a data-nav="report">📊 <span data-t="monthly"></span></a>
+    <div class="sec" data-t="navSystem"></div>
+    <a data-nav="settings">⚙️ <span data-t="settings"></span></a>
+  </nav>
+
+  <div class="main">
+    <div class="tabs" id="tabs"></div>
+    <div class="content" id="content">
+
+      <!-- HOME -->
+      <section class="page" id="pg-home">
+        <div class="stats">
+          <div class="stat"><div class="n" id="stVisits">0</div><div class="l" data-t="stVisits"></div></div>
+          <div class="stat"><div class="n" id="stPhotos">0</div><div class="l" data-t="stPhotos"></div></div>
+          <div class="stat"><div class="n" id="stEstates">0</div><div class="l" data-t="stEstates"></div></div>
+          <div class="stat warn"><div class="n" id="stPending">0</div><div class="l" data-t="stPending"></div></div>
+        </div>
+        <div class="row-actions" style="margin-bottom:12px">
+          <button class="btn-ghost" data-go="list" data-t="viewAll"></button>
+          <button class="btn-ghost" id="btnSyncNow" data-t="syncNow"></button>
+        </div>
+        <div class="card">
+          <h2 data-t="recent"></h2>
+          <div class="tblwrap"><table class="tbl" id="tblRecent"></table></div>
+        </div>
+      </section>
+
+      <!-- LIST -->
+      <section class="page" id="pg-list">
+        <div style="display:flex;gap:10px"><input class="f-in" id="lSearch" type="search" data-tp="searchAll" style="flex:1"><button class="btn" data-go="new" data-t="newVisitBtn" style="white-space:nowrap"></button></div>
+        <div class="bar">
+          <div><label class="f" data-t="month"></label><select class="f-in" id="lMonth"></select></div>
+          <div><label class="f" data-t="estate"></label><select class="f-in" id="lEstate"></select></div>
+          <div><label class="f" data-t="cCreated"></label><select class="f-in" id="lOfficer"></select></div>
+          <div><label class="f" data-t="status"></label><select class="f-in" id="lStatus"></select></div>
+        </div>
+        <div class="tblwrap"><table class="tbl" id="tblList"></table></div>
+        <div class="foot" id="lFoot"></div>
+      </section>
+
+      <!-- PHOTOS -->
+      <section class="page" id="pg-photos">
+        <div class="row-actions" style="margin-bottom:12px">
+          <span class="crumbs" id="phCrumbs"></span>
+          <select class="f-in" id="gShow" style="width:auto"></select>
+          <span style="flex:1"></span>
+          <button class="btn" id="phNew"></button>
+        </div>
+        <input type="file" id="fPickF" accept="image/*" multiple hidden>
+        <input type="file" id="fCamF" accept="image/*" capture="environment" hidden>
+        <div id="phMsg"></div>
+        <div id="phPanel"></div>
+        <div class="card" id="phMain"></div>
+      </section>
+
+      <!-- NEW PHOTO FOLDER -->
+      <section class="page" id="pg-newfolder">
+        <div class="card" style="border-color:#93c5fd">
+          <div class="row-actions" style="margin-bottom:12px"><h2 style="margin:0">📷 <span data-t="newFolderTab"></span></h2><span style="flex:1"></span><button class="btn-ghost" id="nfCancel" data-t="cancel"></button></div>
+          <div class="grid2">
+            <div><label class="f req" data-t="estate"></label><select class="f-in" id="nfEstate"></select></div>
+            <div><label class="f" data-t="folderRef"></label><input class="f-in" id="nfRef" style="text-transform:uppercase"></div>
+            <div style="grid-column:1/-1"><label class="f" data-t="noteOpt"></label><input class="f-in" id="nfNote" data-tp="nfNotePh"></div>
+          </div>
+          <div class="row-actions" style="margin-top:14px">
+            <button class="btnlike" id="nfCam" data-t="takePhoto"></button>
+            <button class="btnlike" id="nfPick" data-t="uploadPhotos"></button>
+            <input type="file" id="nfPickIn" accept="image/*" multiple hidden>
+            <input type="file" id="nfCamIn" accept="image/*" capture="environment" hidden>
+          </div>
+          <div class="thumbs" id="nfThumbs" style="margin-top:12px"></div>
+          <div style="margin-top:14px"><button class="btn" id="nfSave"></button></div>
+        </div>
+      </section>
+
+      <!-- REPORT -->
+      <section class="page" id="pg-report">
+        <div class="bar" style="align-items:end">
+          <div><label class="f" data-t="month"></label><select class="f-in" id="rMonth"></select></div>
+          <div class="row-actions">
+            <button class="btn" id="btnRepPdf">📄 PDF</button>
+            <button class="btn-ghost" id="btnRepCsv">📗 Excel (CSV)</button>
+          </div>
+        </div>
+        <div class="stats" id="rStats"></div>
+        <div class="card" style="margin-bottom:16px"><h2 data-t="byEstate"></h2><div class="tblwrap"><table class="tbl" id="tblRepEstate"></table></div></div>
+        <div class="card"><h2 data-t="byOfficer"></h2><div class="tblwrap"><table class="tbl" id="tblRepOfficer"></table></div></div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="page set" id="pg-settings">
+        <div class="stabs" id="stabs">
+          <button data-st="general" data-t="setGeneral"></button>
+          <button data-st="pdf" data-t="setReport"></button>
+          <button data-st="lists" data-t="setLists"></button>
+          <button data-st="users" data-t="setUsers"></button>
+          <button data-st="sync">Google Drive Sync</button>
+        </div>
+        <div class="card">
+          <div class="spane" data-sp="general">
+            <div class="grid2">
+              <div><label class="f req" data-t="setCompany"></label><input class="f-in" id="sCompany"></div>
+              <div><label class="f" data-t="setRemember"></label><select class="f-in" id="sRemember"><option value="yes" data-t="remYes"></option><option value="no" data-t="remNo"></option></select></div>
+            </div>
+            <div style="margin-top:14px">
+              <label class="f" data-t="setLogo"></label>
+              <div class="row-actions">
+                <img id="setLogoPrev" style="height:40px;display:none">
+                <button type="button" class="btn-ghost" id="btnLogo" data-t="pickLogo"></button>
+                <button type="button" class="btn-ghost" id="btnLogoReset" data-t="useLogoFile"></button>
+                <input type="file" id="logoPick" accept="image/*" hidden>
+              </div>
+              <p class="hint" data-t="logoHint"></p>
+            </div>
+          </div>
+
+          <div class="spane" data-sp="pdf">
+            <div class="grid2">
+              <div><label class="f" data-t="setRev"></label><input class="f-in" id="sRev"></div>
+              <div><label class="f" data-t="setHeader"></label>
+                <select class="f-in" id="sHeader"><option value="all" data-t="hdrAll"></option><option value="first" data-t="hdrFirst"></option></select></div>
+              <div><label class="f" data-t="setPdfLang"></label>
+                <select class="f-in" id="sPdfLang"><option value="ms">Bahasa Melayu</option><option value="en">English</option></select></div>
+            </div>
+          </div>
+
+          <div class="spane" data-sp="lists">
+            <div class="grid2">
+              <div><label class="f" data-t="setTitles"></label><div class="le" id="leTit"></div>
+                <div class="le-add"><input class="f-in" id="addTitName" data-tp="titNamePh"><button class="btn" id="addTit">+</button></div>
+                <p class="hint" data-t="setTitlesHint"></p></div>
+              <div><label class="f" data-t="setEstates"></label><div class="le" id="leEst"></div>
+                <div class="le-add"><input class="f-in" id="addEstName" data-tp="estNamePh"><button class="btn" id="addEst">+</button></div>
+                <p class="hint" data-t="estatesHint"></p></div>
+            </div>
+          </div>
+
+          <div class="spane" data-sp="users">
+            <div class="tblwrap"><table class="tbl" id="tblUsers"></table></div>
+            <div class="grid2" style="margin-top:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+              <div><label class="f req" data-t="username"></label><input class="f-in" id="nuUser" autocomplete="off"></div>
+              <div><label class="f req" data-t="fullName"></label><input class="f-in" id="nuName" autocomplete="off"></div>
+              <div><label class="f req" data-t="password"></label><input class="f-in" id="nuPass" type="password" autocomplete="new-password"></div>
+              <div><label class="f" data-t="docCode"></label><input class="f-in" id="nuCode" maxlength="6" style="text-transform:uppercase" data-tp="docCodePh"></div>
+              <div><label class="f" data-t="role"></label><select class="f-in" id="nuRole"><option value="staff" data-t="roleStaff"></option><option value="admin" data-t="roleAdmin"></option></select></div>
+              <div style="display:flex;align-items:end"><button class="btn" id="nuAdd" style="width:100%" data-t="addUser"></button></div>
+            </div>
+            <p class="hint" data-t="usersHint"></p>
+          </div>
+
+          <div class="spane" data-sp="sync">
+            <div class="grid2">
+              <div><label class="f" data-t="setSyncUrl"></label><input class="f-in" id="syncUrl" placeholder="https://script.google.com/macros/s/.../exec"></div>
+              <div><label class="f" data-t="setSyncKey"></label><input class="f-in" id="syncKey"></div>
+            </div>
+            <p class="hint" data-t="syncHint"></p>
+            <div style="margin-top:12px"><button class="btn-ghost" id="btnTestSync" data-t="testSync"></button></div>
+          </div>
+
+          <div class="row-actions" style="margin-top:20px;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px">
+            <span class="muted small"><span class="reqmark">*</span> <span data-t="reqNote"></span></span>
+            <button class="btn" id="btnSaveSettings" data-t="save"></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- DOC EDITOR -->
+      <section class="page" id="pg-doc">
+        <div class="doc-bar">
+          <span class="badge" id="dBadge"></span>
+          <span class="dn" id="dDocNo"></span><b id="dTitle"></b>
+          <span class="muted small" id="dCreated"></span>
+          <span class="spacer"></span>
+          <span id="saveState" class="muted small"></span>
+          <button class="btn-ghost" id="btnEdit"></button>
+          <button class="btn" id="btnPdf"></button>
+          <button class="btn-ghost" id="btnPdfDl"></button>
+          <button class="btn-danger" id="btnDelVisit" data-t="delVisit"></button>
+        </div>
+
+        <!-- VIEW MODE -->
+        <div class="docview" id="docView">
+          <div class="sheets" id="sheets"></div>
+          <div class="sidecol">
+            <div class="card"><h2>🕒 <span data-t="timeline"></span></h2><ul class="tl" id="timeline"></ul></div>
+            <div class="card">
+              <h2>🖼 <span data-t="photos"></span> <small class="muted" id="vCount"></small></h2>
+              <div class="row-actions">
+                <button class="btnlike" id="vCam" data-t="takePhoto"></button>
+                <button class="btnlike" id="vPick" data-t="uploadPhotos"></button>
+                <button class="btn-ghost" id="btnDlAll" data-t="dlAll" style="display:none"></button>
+              </div>
+              <div id="vAttach"></div>
+              <div class="vthumbs" id="vThumbs"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EDIT MODE -->
+        <div class="edcol" id="docEdit">
+          <div class="card">
+            <h2 data-t="secA"></h2>
+            <div class="grid2">
+              <div><label class="f req" for="title" data-t="reportTitle"></label><select class="f-in" id="title"></select></div>
+              <div><label class="f req" for="tarikh" data-t="date"></label><input class="f-in" type="date" id="tarikh"></div>
+              <div><label class="f req" for="ladang" data-t="estate"></label>
+                <select class="f-in" id="ladang"></select><datalist id="dlEstates"></datalist></div>
+              <div style="display:none"><label class="f req" for="pegawai" data-t="officers"></label>
+                <div class="f-in chips" id="offBox"><span id="offChips" style="display:contents"></span><input id="pegawai" list="dlOfficers" data-tp="officerPh" autocomplete="off"></div>
+                <datalist id="dlOfficers"></datalist></div>
+              <div><label class="f" for="nota" data-t="note"></label>
+                <input class="f-in" id="nota" data-tp="notePh"></div>
+            </div>
+          </div>
+          <div class="card" id="attachCard">
+            <h2>📎 <span data-t="attachH"></span></h2>
+            <div id="attachList"></div>
+            <details class="newph" id="newPhDet"><summary id="newPhSum"></summary>
+            <div class="drop" id="drop">
+              <span data-t="dropText"></span>
+              <div class="row">
+                <button class="btn-ghost" id="btnPick" data-t="pick"></button>
+                <button class="btn-ghost" id="btnCam" data-t="cam"></button>
+              </div>
+              <input type="file" id="filePick" accept="image/*" multiple hidden>
+              <input type="file" id="fileCam" accept="image/*" capture="environment" hidden>
+            </div>
+            </details>
+          </div>
+          <div class="card">
+            <h2><span data-t="secB"></span> <small class="muted" id="photoCount"></small></h2>
+            <div class="selbar" id="selBar">
+              <label class="chk"><input type="checkbox" id="selAll"> <span data-t="selectAll"></span></label>
+              <span class="muted small" id="selCount"></span><span style="flex:1"></span>
+              <button class="btn-ghost" id="selMove"></button>
+              <button class="btn-danger" id="selDel"></button>
+            </div>
+            <div id="photoGrid"></div>
+            <div class="empty" id="emptyMsg" data-t="noPhotos"></div>
+          </div>
+          <div class="actions">
+            <span class="spacer"></span>
+            <button class="btn-ghost" id="btnDiscard" data-t="discard" style="display:none"></button>
+            <button class="btn" id="btnView"></button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<div id="lb" hidden>
+  <button class="lbnav lbprev" id="lbPrev" title="Previous (←)">‹</button>
+  <img id="lbImg" alt="">
+  <button class="lbnav lbnext" id="lbNext" title="Next (→)">›</button>
+  <div class="cap" id="lbCap"></div>
+  <div class="lbbar">
+    <button id="lbClose"></button>
+    <button id="lbDl"></button>
+    <button id="lbPrint"></button>
+    <button id="lbOpen"></button>
+    <button id="lbMove"></button>
+    <button class="dan" id="lbDel"></button>
+  </div>
+</div>
+
+<div id="pdlg" hidden>
+  <div class="pdbox">
+    <h3>🖨 <span data-t="printPhotos"></span><span style="flex:1"></span><span class="muted" id="pdCount" style="font-weight:normal;font-size:13px"></span></h3>
+    <label class="f" style="margin-top:10px" data-t="perA4"></label>
+    <div class="pdopts"><label><input type="radio" name="pdper" value="1"> <span data-t="per1"></span></label><label><input type="radio" name="pdper" value="2"> 2</label><label><input type="radio" name="pdper" value="4"> 4</label></div>
+    <label class="f" style="margin-top:12px" data-t="paper"></label>
+    <div class="pdopts"><label><input type="radio" name="pdori" value="auto"> <span data-t="oriAuto"></span></label><label><input type="radio" name="pdori" value="port"> <span data-t="oriPort"></span></label><label><input type="radio" name="pdori" value="land"> <span data-t="oriLand"></span></label></div>
+    <div class="row-actions" style="margin-top:16px;justify-content:flex-end"><button class="btn-ghost" id="pdCancel" data-t="cancel"></button><button class="btn" id="pdGo" data-t="printNow"></button></div>
+  </div>
+</div>
+
+<div id="print"></div>
+
+<dialog class="pop" id="dlgPrint">
+  <div class="pop-head">
+    <h3 id="pvTitle"></h3>
+    <button class="btn-ghost" id="pvOpen"></button>
+    <button class="btn" id="pvPrint"></button>
+    <button class="btn-ghost" id="pvDl">⬇ <span data-t="downloadPdf"></span></button>
+    <button class="x" id="pvClose">✕</button>
+  </div>
+  <div class="pv-body" id="pvBody"></div>
+</dialog>
+
+<dialog id="dlgCam">
+  <div class="cam">
+    <video id="camVideo" autoplay playsinline muted></video>
+    <div style="display:flex;gap:8px">
+      <button class="btn" id="btnSnap" data-t="snap"></button>
+      <button class="btn-ghost" id="btnCamClose" data-t="cancel"></button>
+    </div>
+  </div>
+</dialog>
+<div id="toast"></div>
+
+<div class="login" id="login" hidden>
+  <div class="login-card">
+    <div class="lang login-lang"><button type="button" data-lang="ms">BM</button><button type="button" data-lang="en">EN</button></div>
+    <img id="loginLogo" alt="" src="logo.jpg" onerror="this.style.display='none'">
+    <h2 id="loginCompany"></h2>
+    <div class="muted" id="loginSub"></div>
+    <form id="loginForm" autocomplete="on">
+      <div><label class="f req" data-t="username"></label><input class="f-in" id="liUser" autocomplete="username" autocapitalize="none" required></div>
+      <div id="liNameRow"><label class="f req" data-t="fullName"></label><input class="f-in" id="liName"></div>
+      <div><label class="f req" data-t="password"></label><input class="f-in" id="liPass" type="password" autocomplete="current-password" required></div>
+      <div id="liPass2Row"><label class="f req" data-t="password2"></label><input class="f-in" id="liPass2" type="password" autocomplete="new-password"></div>
+      <label class="chk" id="liRemRow"><input type="checkbox" id="liRem"> <span data-t="rememberMe"></span></label>
+      <div class="err" id="liErr"></div>
+      <button class="btn" id="liBtn" type="submit"></button>
+    </form>
+  </div>
+</div>
+
+<div class="menu" id="userMenu">
+  <div class="who"><b id="mName"></b><div class="muted small" id="mUser"></div></div>
+  <button id="mPass" data-t="changePass"></button>
+  <button id="mLogout" data-t="logout"></button>
+</div>
+
+<script>
+/* =========================================================
+   Lawatan Ladang — system version (offline-first)
+   ========================================================= */
+const CAPTION_MAX = 120;
+const DEFAULT_LOGO = 'data:image/jpeg;base64,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';
+const $ = id => document.getElementById(id);
+
+/* ---------- Language ---------- */
+const STR = {
+  ms: {
+    navMain: 'LAWATAN', navSystem: 'SISTEM', home: 'Utama', visitList: 'Senarai Lawatan', newVisit: 'Lawatan Baru',
+    photos: 'Gambar', monthly: 'Laporan Bulanan', settings: 'Tetapan',
+    stVisits: 'Lawatan bulan ini', stPhotos: 'Gambar bulan ini', stEstates: 'Ladang dilawati bulan ini', stPending: 'Belum sync',
+    newVisitBtn: '+ Lawatan Baru', viewAll: 'Lihat semua lawatan', syncNow: '☁️ Sync sekarang', recent: 'Lawatan terkini',
+    searchAll: 'Cari no. dokumen, ladang, pengguna atau keterangan gambar (semua bulan)',
+    month: 'Bulan', estate: 'Ladang', officer: 'Pegawai', status: 'Status',
+    allMonths: 'Semua bulan', allEstates: 'Semua ladang', allOfficers: 'Semua pengguna', allStatus: 'Semua status',
+    cDoc: 'No. Dok', cDate: 'Tarikh', cEstate: 'Ladang', cTitle: 'Tajuk', cOfficer: 'Pengguna', cPhotos: 'Gambar', cStatus: 'Status', cNote: 'Nota', cCreated: 'Dicipta oleh',
+    cVisits: 'Lawatan', cDocs: 'No. Dokumen', cCode: 'Kod', total: 'Jumlah',
+    footList: (a, b) => `${a} lawatan · ${b} gambar`, footGal: n => `${n} gambar`, nothing: 'Tiada rekod.',
+    byEstate: 'Ikut Ladang', byOfficer: 'Ikut Pengguna',
+    secA: 'Bahagian A: Maklumat Lawatan', reportTitle: 'Tajuk Laporan', date: 'Tarikh', note: 'Nota (tidak dicetak)', notePh: 'Catatan dalaman',
+    estatePh: 'Pilih atau taip nama ladang', chooseEstate: 'Pilih ladang…', newEstate: '➕ Ladang baru…', newEstateQ: 'Nama ladang baru:', pdfBtn: '⬇ PDF', officerPh: 'Pilih atau taip nama pegawai',
+    secB: 'Bahagian B: Gambar Lawatan dan Keterangan', dropText: 'Seret & lepas gambar di sini, atau',
+    pick: '📁 Pilih Gambar', cam: '📷 Ambil Gambar', noPhotos: 'Belum ada gambar.',
+    photo: 'Gambar', capPh: 'Masukkan keterangan gambar', left: n => `${n} aksara lagi`,
+    dlAll: '💾 Muat Turun Semua Gambar', done: '☁️ Siap & Sync', delVisit: '🗑 Padam',
+    saving: 'Menyimpan…', saved: 'Disimpan ✓', noEstate: '(Tiada ladang)', draftNo: 'DRAF',
+    draft: 'Draf', pending: '⏳ Belum sync', synced: '✅ Sudah sync',
+    online: 'Online', offline: 'Offline', waiting: n => `${n} menunggu`, syncingNow: '☁️ Sedang sync…',
+    snap: '📸 Tangkap', cancel: 'Batal', save: 'Simpan Tetapan', testSync: 'Uji Sambungan',
+    setGeneral: 'Umum', setCompany: 'Nama Syarikat (bar atas)', setUser: 'Nama Anda (untuk "Dicipta oleh")',
+    setReport: 'Laporan PDF', setTitles: 'Tajuk Laporan',
+    setTitlesHint: 'Yang pertama = tajuk asal untuk lawatan baru. Guna ▲ ▼ untuk susun.',
+    setRev: 'Teks Rev (penjuru kanan atas)', setHeader: 'Logo & tajuk dalam PDF',
+    hdrAll: 'Setiap muka surat', hdrFirst: 'Muka surat 1 sahaja', setPdfLang: 'Bahasa PDF',
+    setLogo: 'Logo', pickLogo: 'Pilih Logo…', useLogoFile: 'Guna logo asal',
+    logoHint: 'Logo Masih Jaya Group sudah dimasukkan. Pilih logo lain hanya jika perlu.',
+    setLists: 'Senarai Pilihan', setEstates: 'Ladang', setOfficers: 'Orang lain (tanpa log masuk)',
+    estatesHint: 'Guna ▲ ▼ untuk susun urutan senarai.',
+    listsHint: 'Nama baru yang ditaip ditambah ke senarai secara automatik.',
+    setSyncUrl: 'Pautan Sync (Apps Script)', setSyncKey: 'Kata Kunci Sync',
+    syncHint: 'Biarkan kosong jika belum guna sync. Data tetap selamat dalam peranti ini.',
+    onlyImages: 'Sila pilih fail imej sahaja.', processing: n => `Memproses ${n} gambar…`, added: n => `${n} gambar ditambah ✓`,
+    readFail: n => 'Gagal baca gambar: ' + n, delPhotoQ: 'Buang gambar ini?', noDl: 'Tiada gambar untuk dimuat turun.',
+    downloading: n => `Memuat turun ${n} gambar…`, camFail: m => 'Gagal akses kamera: ' + m,
+    fillA: 'Sila isi Ladang dahulu.', noLib: 'Pustaka PDF belum dimuatkan. Buka sekali dengan internet.',
+    makingPdf: 'Menjana PDF…', pdfOk: 'PDF berjaya dijana ✓', pdfFail: m => 'Gagal jana PDF: ' + m,
+    delVisitQ: n => `Padam lawatan "${n}" dan semua gambarnya dari peranti ini?`, deleted: 'Lawatan dipadam.',
+    noSyncSet: 'Sync belum disetkan (Tetapan). Data selamat dalam peranti ini.', noNet: 'Tiada internet. Akan sync bila ada sambungan.',
+    allSynced: 'Semua sudah sync ✓', syncFail: m => 'Sync gagal: ' + m, syncOk: n => `☁️ ${n} lawatan disync ke Google Drive ✓`,
+    markedDone: 'Ditanda siap ⏳. Sync belum disetkan — data selamat dalam peranti ini.',
+    logoSaved: 'Logo disimpan ✓', logoReset: 'Logo asal digunakan ✓', settingsSaved: 'Tetapan disimpan ✓',
+    connOk: 'Sambungan berjaya ✓', connFail: m => 'Gagal: ' + m, noData: 'Tiada data untuk bulan ini.',
+    repTitle: 'LAPORAN BULANAN LAWATAN',
+    download: 'Muat turun', downloadPdf: 'Muat turun PDF', openVisit: '📄 Buka lawatan', printNow: '🖨 Cetak', printPreview: 'Pratonton cetak', noPhotosYet: 'Tiada gambar.',
+    nPhotos: n => `${n} gambar`, attachedH: 'Dilampir dari Gambar', moveBack: '↶ Pindah ke Gambar', selectAll: 'Pilih semua', nSelected: n => `${n} dipilih`, moveSel: n => `↶ Pindah yang dipilih ke Gambar${n ? ` (${n})` : ''}`, delSel: n => `🗑 Padam yang dipilih${n ? ` (${n})` : ''}`,
+    moveSelQ: n => `Keluarkan ${n} gambar dari lawatan ini dan pindah kembali ke menu Gambar (menunggu dilampir)?`, delSelQ: n => `Padam ${n} gambar terus? Tidak boleh dibatalkan.`, movedN: (n, r) => `${n} gambar dipindah ke ${r} (menu Gambar).`, moveQ: 'Keluarkan gambar ini dari lawatan dan pindah kembali ke menu Gambar (menunggu dilampir)?', movedFrom: d => `Dipindah dari ${d}`, moved: r => `Gambar dipindah ke ${r} (menu Gambar).`, tickHint: 'Tanda ☑ untuk lampir. Buang tanda untuk keluarkan (gambar kembali ke menu Gambar).', attachedOk: '✔ Dilampir', undoAttach: '↶ Batal lampir', undoQ: r => `Batal lampir ${r}? Gambarnya kembali ke menu Gambar sebagai "menunggu".`,
+    undone: r => `${r} dikembalikan ke menu Gambar.`, evDetached: n => `Lampiran dibatalkan (${n})`, phoneNote: '📱 Telefon: ambil, muat naik dan lihat gambar dan lawatan. Laporan dan tetapan di komputer.', newFolderTab: 'Folder gambar baru', folderRef: 'Rujukan folder', noteOpt: 'Nota (pilihan)', nfNotePh: 'Pemandu, lori, gambar apa',
+    autoRef: r => `Auto: ${r}`, autoRefNone: 'Auto bila ladang dipilih', saveFolder: n => `💾 Simpan folder${n ? ` (${n} gambar)` : ''}`, folderSaved: r => `Folder ${r} disimpan.`,
+    showAll: 'Semua folder', showWait: 'Menunggu dilampir', showAtt: 'Dilampir pada dok', nFolders: n => `${n} folder`, estFolders: e => `🗂 Folder gambar ${e}`,
+    folderClickHint: 'Klik folder untuk lihat atau tambah gambar. Untuk lampir: Lawatan baru › 📎 Lampir gambar.', waitBadge: 'Menunggu dilampir', attTo: d => `✔ Dilampir pada ${d} · buka dok`,
+    saveChanges: 'Simpan perubahan', refEmpty: 'Rujukan folder tidak boleh kosong.', noFolders: 'Tiada folder.', saveVisit: '💾 Simpan', discard: 'Buang', newVisitTab: 'Lawatan baru', est: '(anggaran)',
+    discardQ: 'Buang lawatan baru ini? Ia belum disimpan.', savedAs: n => `✔ Disimpan ${n}`, attachH: 'Lampir gambar (pilihan)', noFolderYet: '▾ Tiada folder? Ambil atau muat naik gambar baru', moreNew: '▾ Ambil atau muat naik gambar baru',
+    noFoldersFor: e => `Tiada folder gambar menunggu untuk ${e}. Buat satu dalam menu 📷 Gambar, atau ambil / muat naik di bawah.`,
+    chooseEstateFirst: 'Pilih ladang dahulu untuk lihat folder gambar yang menunggu.', attach: '📎 Lampir', attached: n => `${n} gambar dilampirkan ✓`,
+    waitingH: '⏳ Gambar menunggu untuk dilampir', newFolder: '➕ Folder gambar baru', delFolder: '🗑 Padam folder', delFolderQ: 'Padam folder ini dan semua gambarnya?',
+    nWaiting: n => `${n} menunggu`, folderHint: 'Ambil gambar dahulu, kemudian lampirkan pada lawatan (Lawatan baru → Lampir gambar).', folderMade: r => `Folder ${r} dibuat. Ambil atau tambah gambar.`,
+    close: 'Tutup', delPhoto: 'Padam gambar', printPhotos: 'Cetak gambar', perA4: 'Gambar setiap A4', per1: '1 (satu muka)', paper: 'Kertas',
+    oriAuto: 'Auto (ikut gambar)', oriPort: 'Menegak', oriLand: 'Melintang', printAll: '🖨 Cetak semua', dlAllShort: '⬇ Muat turun semua',
+    byEstate2: '🗂 Gambar ikut ladang', clickEstate: 'Klik ladang untuk lihat lawatan dan gambarnya.', allEstatesCrumb: '📂 Semua ladang',
+    nVisits: n => `${n} lawatan`, estatePhotos: e => `🗂 Lawatan ${e}`, clickFolder: 'Klik lawatan untuk lihat atau tambah gambar.', addPhotos: '⬆ Tambah gambar', takePhoto: '📷 Ambil gambar',
+    noEstatesYet: 'Belum ada lawatan.', noPhotoInFolder: 'Tiada gambar dalam lawatan ini.', photoDeleted: 'Gambar dipadam.',
+    userLbl: 'Pengguna', changePassShort: 'Tukar kata laluan', logoutShort: 'Log keluar', installApp: 'Pasang di telefon', installed: 'Sudah dipasang. Buka dari ikon di skrin utama.',
+    edit: '✏️ Edit', print: '🖨 Cetak', doneEditing: '✓ Siap edit', timeline: 'Garis masa', uploadPhotos: '⬆ Muat naik gambar',
+    nextDraftH: 'Seterusnya: tanda lawatan siap', nextDraftP: 'Bila gambar dan keterangan sudah lengkap, tanda siap. Ia akan sync ke Google Drive bila ada internet.', markDone: '✓ Tanda siap',
+    nextPendH: '⏳ Menunggu sync', nextPendNoSync: 'Sync belum disetkan (Tetapan → Google Drive Sync). Lawatan selamat dalam peranti ini.', nextPendP: 'Akan dimuat naik sendiri bila ada internet.', syncNowBtn: '☁️ Sync sekarang',
+    nextSyncedH: '✅ Sudah sync ke Google Drive', nextSyncedP: t => `Dimuat naik ${t}. Jika diedit, ia akan sync semula.`,
+    evCreated: 'Dicipta', evPhotos: n => `Gambar ditambah (${n})`, evPdf: 'PDF dimuat turun', evPrint: 'Dicetak', evDone: 'Ditanda siap', evSynced: 'Sync ke Google Drive', evEdited: 'Diedit',
+    officers: 'Pegawai (boleh lebih dari satu)', hello: n => `Selamat datang, ${n} 👋`,
+    username: 'Nama pengguna', fullName: 'Nama penuh (dicetak sebagai pegawai)', password: 'Kata laluan', password2: 'Ulang kata laluan',
+    rememberMe: 'Kekal log masuk dalam peranti ini', login: 'Log Masuk', createAdmin: 'Cipta Akaun Admin',
+    firstSetup: 'Kali pertama: cipta akaun admin anda', pleaseLogin: 'Sila log masuk',
+    badLogin: 'Nama pengguna atau kata laluan salah.', passShort: 'Kata laluan sekurang-kurangnya 4 aksara.', passMismatch: 'Kata laluan tidak sama.',
+    userExists: 'Nama pengguna sudah wujud.', fillAll: 'Sila isi semua ruangan.', changePass: '🔑 Tukar kata laluan', logout: '🚪 Log keluar',
+    newPassQ: 'Kata laluan baru:', passChanged: 'Kata laluan ditukar ✓', resetPass: 'Reset', delUser: 'Padam',
+    delUserQ: n => `Padam pengguna ${n}?`, lastAdmin: 'Mesti ada sekurang-kurangnya seorang admin.', userAdded: 'Pengguna ditambah ✓',
+    docCode: 'Kod No. Dok', docCodePh: 'cth. AL', setUsers: 'Pengguna & Kata Laluan', role: 'Peranan', roleAdmin: 'Admin', roleStaff: 'Staf', addUser: '+ Tambah Pengguna',
+    usersHint: 'Setiap pengguna ada no. dokumen sendiri: KOD-bil/bulan (cth. AL-1/11, AL-2/11). Admin boleh buka Tetapan; Staf hanya isi lawatan.', cUser: 'Pengguna',
+    setRemember: '"Kekal log masuk"', remYes: 'Dibenarkan', remNo: 'Tidak — log masuk setiap kali buka app',
+    officersHint: 'Orang yang ikut lawatan tetapi tidak guna app (cth. pemandu, mekanik). Mereka muncul sebagai pilihan dalam kotak Pegawai. Pengguna sudah ada secara automatik.', titNamePh: 'Tajuk baru', reqNote: 'Wajib diisi', default: 'Asal',
+    estNamePh: 'Nama ladang', codePh: 'Kod', offNamePh: 'Nama pegawai', up: 'Naik', down: 'Turun',
+  },
+  en: {
+    navMain: 'VISITS', navSystem: 'SYSTEM', home: 'Home', visitList: 'Visit list', newVisit: 'New visit',
+    photos: 'Photos', monthly: 'Monthly report', settings: 'Settings',
+    stVisits: 'Visits this month', stPhotos: 'Photos this month', stEstates: 'Estates visited this month', stPending: 'Not synced',
+    newVisitBtn: '+ New Visit', viewAll: 'View all visits', syncNow: '☁️ Sync now', recent: 'Recent visits',
+    searchAll: 'Search doc no., estate, user or photo caption (all months)',
+    month: 'Month', estate: 'Estate', officer: 'Officer', status: 'Status',
+    allMonths: 'All months', allEstates: 'All estates', allOfficers: 'All users', allStatus: 'All status',
+    cDoc: 'Doc no.', cDate: 'Date', cEstate: 'Estate', cTitle: 'Title', cOfficer: 'User', cPhotos: 'Photos', cStatus: 'Status', cNote: 'Note', cCreated: 'Created by',
+    cVisits: 'Visits', cDocs: 'Doc nos.', cCode: 'Code', total: 'Total',
+    footList: (a, b) => `${a} visit${a === 1 ? '' : 's'} · ${b} photo${b === 1 ? '' : 's'}`, footGal: n => `${n} photo${n === 1 ? '' : 's'}`, nothing: 'No records.',
+    byEstate: 'By Estate', byOfficer: 'By User',
+    secA: 'Section A: Visit Details', reportTitle: 'Report Title', date: 'Date', note: 'Note (not printed)', notePh: 'Internal note',
+    estatePh: 'Select or type estate name', chooseEstate: 'Choose estate…', newEstate: '➕ New estate…', newEstateQ: 'New estate name:', pdfBtn: '⬇ PDF', officerPh: 'Select or type officer name',
+    secB: 'Section B: Visit Photos and Captions', dropText: 'Drag & drop photos here, or',
+    pick: '📁 Choose Photos', cam: '📷 Take Photo', noPhotos: 'No photos yet.',
+    photo: 'Photo', capPh: 'Enter photo caption', left: n => `${n} characters left`,
+    dlAll: '💾 Download All Photos', done: '☁️ Done & Sync', delVisit: '🗑 Delete',
+    saving: 'Saving…', saved: 'Saved ✓', noEstate: '(No estate)', draftNo: 'DRAFT',
+    draft: 'Draft', pending: '⏳ Not synced', synced: '✅ Synced',
+    online: 'Online', offline: 'Offline', waiting: n => `${n} waiting`, syncingNow: '☁️ Syncing…',
+    snap: '📸 Capture', cancel: 'Cancel', save: 'Save Settings', testSync: 'Test Connection',
+    setGeneral: 'General', setCompany: 'Company name (top bar)', setUser: 'Your name (for "Created by")',
+    setReport: 'PDF Report', setTitles: 'Report Titles',
+    setTitlesHint: 'The first one = default title for new visits. Use ▲ ▼ to reorder.',
+    setRev: 'Rev text (top-right corner)', setHeader: 'Logo & title in PDF',
+    hdrAll: 'Every page', hdrFirst: 'Page 1 only', setPdfLang: 'PDF language',
+    setLogo: 'Logo', pickLogo: 'Choose Logo…', useLogoFile: 'Use default logo',
+    logoHint: 'The Masih Jaya Group logo is built in. Choose another only if needed.',
+    setLists: 'Pick Lists', setEstates: 'Estates', setOfficers: 'Other people (no login)',
+    estatesHint: 'Use ▲ ▼ to set the list order.',
+    listsHint: 'New names you type are added to the list automatically.',
+    setSyncUrl: 'Sync Link (Apps Script)', setSyncKey: 'Sync Password',
+    syncHint: 'Leave empty if not using sync yet. Your data stays safe on this device.',
+    onlyImages: 'Please choose image files only.', processing: n => `Processing ${n} photo(s)…`, added: n => `${n} photo(s) added ✓`,
+    readFail: n => 'Could not read photo: ' + n, delPhotoQ: 'Remove this photo?', noDl: 'No photos to download.',
+    downloading: n => `Downloading ${n} photo(s)…`, camFail: m => 'Cannot open camera: ' + m,
+    fillA: 'Please fill in Estate first.', noLib: 'PDF library not loaded. Open once with internet.',
+    makingPdf: 'Creating PDF…', pdfOk: 'PDF created ✓', pdfFail: m => 'PDF failed: ' + m,
+    delVisitQ: n => `Delete visit "${n}" and all its photos from this device?`, deleted: 'Visit deleted.',
+    noSyncSet: 'Sync not set up (Settings). Data is safe on this device.', noNet: 'No internet. Will sync when connected.',
+    allSynced: 'Everything is synced ✓', syncFail: m => 'Sync failed: ' + m, syncOk: n => `☁️ ${n} visit(s) synced to Google Drive ✓`,
+    markedDone: 'Marked done ⏳. Sync not set up — data is safe on this device.',
+    logoSaved: 'Logo saved ✓', logoReset: 'Default logo restored ✓', settingsSaved: 'Settings saved ✓',
+    connOk: 'Connection OK ✓', connFail: m => 'Failed: ' + m, noData: 'No data for this month.',
+    repTitle: 'MONTHLY VISIT REPORT',
+    download: 'Download', downloadPdf: 'Download PDF', openVisit: '📄 Open visit', printNow: '🖨 Print', printPreview: 'Print preview', noPhotosYet: 'No photos.',
+    nPhotos: n => `${n} photo${n === 1 ? '' : 's'}`, attachedH: 'Attached from Photos', moveBack: '↶ Move back to Photos', selectAll: 'Select all', nSelected: n => `${n} selected`, moveSel: n => `↶ Move selected back to Photos${n ? ` (${n})` : ''}`, delSel: n => `🗑 Delete selected${n ? ` (${n})` : ''}`,
+    moveSelQ: n => `Take ${n} photo(s) out of this visit and move them back to the Photos menu (waiting to attach)?`, delSelQ: n => `Delete ${n} photo(s) for good? This cannot be undone.`, movedN: (n, r) => `${n} photo(s) moved to ${r} (Photos menu).`, moveQ: 'Take this photo out of the visit and move it back to the Photos menu (waiting to attach)?', movedFrom: d => `Moved from ${d}`, moved: r => `Photo moved to ${r} (Photos menu).`, tickHint: 'Tick ☑ to attach. Untick to remove (photos go back to the Photos menu).', attachedOk: '✔ Attached', undoAttach: '↶ Undo attach', undoQ: r => `Undo attach ${r}? Its photos go back to the Photos menu as "waiting".`,
+    undone: r => `${r} is back in the Photos menu.`, evDetached: n => `Attach undone (${n})`, phoneNote: '📱 Phone: take, upload and view photos and visits. Reports and settings are on the computer.', newFolderTab: 'New photo folder', folderRef: 'Folder ref', noteOpt: 'Note (optional)', nfNotePh: 'Driver, lorry, what the photo is',
+    autoRef: r => `Auto: ${r}`, autoRefNone: 'Auto when estate chosen', saveFolder: n => `💾 Save folder${n ? ` (${n} photo${n === 1 ? '' : 's'})` : ''}`, folderSaved: r => `Folder ${r} saved.`,
+    showAll: 'All folders', showWait: 'Waiting to attach', showAtt: 'Attached to doc', nFolders: n => `${n} folder${n === 1 ? '' : 's'}`, estFolders: e => `🗂 ${e} photo folders`,
+    folderClickHint: 'Click a folder to see or add photos. To attach: New visit › 📎 Attach photos.', waitBadge: 'Waiting to attach', attTo: d => `✔ Attached to ${d} · open doc`,
+    saveChanges: 'Save changes', refEmpty: 'Folder ref cannot be empty.', noFolders: 'No folders.', saveVisit: '💾 Save', discard: 'Discard', newVisitTab: 'New visit', est: '(est.)',
+    discardQ: 'Discard this new visit? It has not been saved.', savedAs: n => `✔ Saved ${n}`, attachH: 'Attach photos (optional)', noFolderYet: '▾ No folder yet? Take or upload new photos', moreNew: '▾ Take or upload new photos',
+    noFoldersFor: e => `No photo folders waiting for ${e}. Make one in the 📷 Photos menu, or take or upload below.`,
+    chooseEstateFirst: 'Choose the estate first to see photo folders waiting for it.', attach: '📎 Attach', attached: n => `${n} photo(s) attached ✓`,
+    waitingH: '⏳ Photos waiting to attach', newFolder: '➕ New photo folder', delFolder: '🗑 Delete folder', delFolderQ: 'Delete this folder and all its photos?',
+    nWaiting: n => `${n} waiting`, folderHint: 'Take photos first, then attach them to a visit (New visit → Attach photos).', folderMade: r => `Folder ${r} made. Take or add photos.`,
+    close: 'Close', delPhoto: 'Delete photo', printPhotos: 'Print photos', perA4: 'Photos per A4', per1: '1 (full page)', paper: 'Paper',
+    oriAuto: 'Auto (follow photo)', oriPort: 'Portrait', oriLand: 'Landscape', printAll: '🖨 Print all', dlAllShort: '⬇ Download all',
+    byEstate2: '🗂 Photos by estate', clickEstate: 'Click an estate to see its visits and photos.', allEstatesCrumb: '📂 All estates',
+    nVisits: n => `${n} visit${n === 1 ? '' : 's'}`, estatePhotos: e => `🗂 ${e} visits`, clickFolder: 'Click a visit to see or add photos.', addPhotos: '⬆ Add photos', takePhoto: '📷 Take photo',
+    noEstatesYet: 'No visits yet.', noPhotoInFolder: 'No photos in this visit.', photoDeleted: 'Photo deleted.',
+    userLbl: 'User', changePassShort: 'Change password', logoutShort: 'Logout', installApp: 'Install on phone', installed: 'Installed. Open it from the icon on your home screen.',
+    edit: '✏️ Edit', print: '🖨 Print', doneEditing: '✓ Done editing', timeline: 'Timeline', uploadPhotos: '⬆ Upload photos',
+    nextDraftH: 'Next: mark visit as done', nextDraftP: 'When the photos and captions are complete, mark it done. It syncs to Google Drive when there is internet.', markDone: '✓ Mark as done',
+    nextPendH: '⏳ Waiting to sync', nextPendNoSync: 'Sync is not set up yet (Settings → Google Drive Sync). The visit is saved on this device.', nextPendP: 'It will upload by itself when there is internet.', syncNowBtn: '☁️ Sync now',
+    nextSyncedH: '✅ Synced to Google Drive', nextSyncedP: t => `Uploaded ${t}. If you edit it, it will sync again.`,
+    evCreated: 'Created', evPhotos: n => `Photos added (${n})`, evPdf: 'PDF downloaded', evPrint: 'Printed', evDone: 'Marked as done', evSynced: 'Synced to Google Drive', evEdited: 'Edited',
+    officers: 'Officers (can be more than one)', hello: n => `Welcome, ${n} 👋`,
+    username: 'Username', fullName: 'Full name (printed as officer)', password: 'Password', password2: 'Repeat password',
+    rememberMe: 'Keep me logged in on this device', login: 'Log In', createAdmin: 'Create Admin Account',
+    firstSetup: 'First time: create your admin account', pleaseLogin: 'Please log in',
+    badLogin: 'Wrong username or password.', passShort: 'Password must be at least 4 characters.', passMismatch: 'Passwords do not match.',
+    userExists: 'Username already exists.', fillAll: 'Please fill in all fields.', changePass: '🔑 Change password', logout: '🚪 Log out',
+    newPassQ: 'New password:', passChanged: 'Password changed ✓', resetPass: 'Reset', delUser: 'Delete',
+    delUserQ: n => `Delete user ${n}?`, lastAdmin: 'There must be at least one admin.', userAdded: 'User added ✓',
+    docCode: 'Doc no. code', docCodePh: 'e.g. AL', setUsers: 'Users & Passwords', role: 'Role', roleAdmin: 'Admin', roleStaff: 'Staff', addUser: '+ Add User',
+    usersHint: 'Each user has their own doc numbers: CODE-no/month (e.g. AL-1/11, AL-2/11). Admins can open Settings; Staff can only fill in visits.', cUser: 'User',
+    setRemember: '"Keep me logged in"', remYes: 'Allowed', remNo: 'No — log in every time the app opens',
+    officersHint: 'People who join visits but do not use the app (e.g. driver, mechanic). They appear as choices in the Officers box. Users are already included automatically.', titNamePh: 'New title', reqNote: 'Required', default: 'Default',
+    estNamePh: 'Estate name', codePh: 'Code', offNamePh: 'Officer name', up: 'Up', down: 'Down',
+  }
+};
+const PDF_STR = {
+  ms: { loc: 'Lokasi', date: 'Tarikh', photo: 'Gambar', page: (a, b) => `Muka Surat ${a} daripada ${b}` },
+  en: { loc: 'Location', date: 'Date', photo: 'Photo', page: (a, b) => `Page ${a} of ${b}` },
+};
+const T = (k, ...a) => { const v = STR[settings.lang][k] ?? STR.ms[k]; return typeof v === 'function' ? v(...a) : v; };
+
+/* ---------- IndexedDB ---------- */
+const DB = {
+  db: null,
+  open() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open('lawatan-ladang', 1);
+      r.onupgradeneeded = () => {
+        const d = r.result;
+        d.createObjectStore('visits', { keyPath: 'id' });
+        d.createObjectStore('photos', { keyPath: 'id' });
+        d.createObjectStore('settings');
+      };
+      r.onsuccess = () => { DB.db = r.result; res(); };
+      r.onerror = () => rej(r.error);
+    });
+  },
+  tx(store, mode, fn) {
+    return new Promise((res, rej) => {
+      const t = DB.db.transaction(store, mode);
+      const out = fn(t.objectStore(store));
+      t.oncomplete = () => res(out && 'result' in out ? out.result : undefined);
+      t.onerror = () => rej(t.error);
+    });
+  },
+  get: (s, k) => DB.tx(s, 'readonly', st => st.get(k)),
+  all: s => DB.tx(s, 'readonly', st => st.getAll()),
+  put: (s, v, k) => DB.tx(s, 'readwrite', st => k === undefined ? st.put(v) : st.put(v, k)),
+  del: (s, k) => DB.tx(s, 'readwrite', st => st.delete(k)),
+};
+
+/* ---------- State ---------- */
+let visits = [], cur = null, syncing = false;
+const photoCache = {}, urls = {};        // photoId -> record / objectURL (shared by all pages)
+let settings = {
+  lang: 'en', pdfLang: 'en', company: 'MASIH JAYA GROUP', users: [], allowRemember: 'yes',
+  titles: ['LAWATAN LADANG', 'SITE VISIT', 'LAWATAN MESIN'],
+  rev: 'Rev:Machinery/Apr 26', header: 'all',
+  estates: [], officers: [],
+  logo: null, syncUrl: '', syncKey: '', lastPegawai: '',
+};
+const saveSettings = () => DB.put('settings', settings, 'main');
+
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const todayKL = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+const fmtDate = s => { if (!s) return ''; const [y, m, d] = s.split('-'); return `${d}-${m}-${y}`; };
+const fmtShort = s => { if (!s) return ''; const [y, m, d] = s.split('-'); return `${d}/${m}/${y.slice(2)}`; };
+const fmtStamp = t => t ? new Date(t).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+const monthOf = v => (v.tarikh || '').slice(0, 7);
+const monthLabel = ym => { const [y, m] = ym.split('-'); return new Date(+y, +m - 1, 1).toLocaleString(settings.lang === 'en' ? 'en-GB' : 'ms-MY', { month: 'long', year: 'numeric' }); };
+const safe = s => (s || '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '');
+const lines = s => [...new Set(s.split('\n').map(x => x.trim()).filter(Boolean))];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function toast(msg, ms = 2600) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+/* ---------- Estates & doc numbers ---------- */
+const estName = line => line.split('=')[0].trim();
+const estateNames = () => settings.estates.map(estName);
+function estCode(name) {
+  const n = (name || '').trim().toLowerCase();
+  const line = settings.estates.find(l => estName(l).toLowerCase() === n && l.includes('='));
+  if (line) return line.split('=')[1].trim().toUpperCase();
+  const w = (name || '').toUpperCase().replace(/^LADANG\s+/, '').replace(/[^A-Z]/g, '');
+  return 'L' + (w.slice(0, 2) || 'XX');
+}
+function nameCode(name) {
+  const w = (name || '').toUpperCase().replace(/[^A-Z ]/g, '').split(/\s+/).filter(x => x && !['BIN', 'BINTI', 'BT', 'B', 'A/L', 'A/P'].includes(x));
+  if (!w.length) return 'X';
+  return w.length === 1 ? w[0].slice(0, 3) : w.slice(0, 3).map(x => x[0]).join('');
+}
+function userCode(v) {
+  const u = settings.users.find(x => x.u === v.createdByU) || settings.users.find(x => x.name === v.createdBy);
+  return (u?.code || nameCode(u?.name || v.createdBy)).toUpperCase();
+}
+function assignDocNo(v) {
+  if (!v.tarikh) return;
+  const code = userCode(v), ym = monthOf(v), mm = String(+ym.slice(5, 7));
+  const used = visits.filter(x => x.id !== v.id && !x.unsaved && x.docNo && monthOf(x) === ym && x.docNo.startsWith(code + '-'))
+    .map(x => parseInt(x.docNo.split('-')[1], 10) || 0);
+  const want = `${code}-`;
+  if (v.docNo && v.docNo.startsWith(want) && v.docNo.endsWith('/' + mm) && !used.includes(parseInt(v.docNo.split('-')[1], 10))) return;
+  v.docNo = `${code}-${(used.length ? Math.max(...used) : 0) + 1}/${mm}`;
+}
+const docLabel = v => v.unsaved ? estDocNo(v) + ' ' + T('est') : (v.docNo || T('draftNo'));
+const savedV = () => visits.filter(v => !v.unsaved);
+function estDocNo(v) { const c = { ...v, docNo: '' }; assignDocNo(c); return c.docNo; }
+
+const offName = line => line.split('=')[0].trim();
+const officerNames = () => settings.users.map(u => u.name);
+const offsOf = v => v.officers || (v.pegawai ? v.pegawai.split(/\s*,\s*/).filter(Boolean) : []);
+function setOfficers(v, arr) { v.officers = [...new Set(arr.map(x => x.trim().toUpperCase()).filter(Boolean))]; v.pegawai = v.officers.join(', '); }
+
+function learn(v) {
+  let ch = false;
+  const addTo = (key, x, names) => {
+    x = (x || '').trim();
+    if (x && !names.some(a => a.toLowerCase() === x.toLowerCase())) { settings[key].push(x); ch = true; }
+  };
+  addTo('estates', v.ladang, estateNames());
+  if (ch) { saveSettings(); fillDatalists(); }
+}
+function fillDatalists() {
+  const fill = (dl, arr) => { dl.innerHTML = ''; arr.forEach(v => { const o = document.createElement('option'); o.value = v; dl.appendChild(o); }); };
+  fill($('dlEstates'), estateNames()); fill($('dlOfficers'), officerNames());
+  fillEstateSelect();
+}
+function fillEstateSelect() {
+  const sel = $('ladang'); if (!sel) return;
+  const val = cur?.ladang || '', names = estateNames();
+  if (val && !names.includes(val)) names.unshift(val);
+  sel.innerHTML = `<option value="">${esc(T('chooseEstate'))}</option>` + names.map(n => `<option ${n === val ? 'selected' : ''}>${esc(n)}</option>`).join('') + `<option value="__new">${esc(T('newEstate'))}</option>`;
+  sel.value = val;
+  sel.classList.toggle('bad', false);
+}
+
+/* ---------- Navigation & tabs ---------- */
+let tabs = ['home'], active = 'home';
+const PAGE_LABEL = { home: 'home', list: 'visitList', photos: 'photos', report: 'monthly', settings: 'settings', newfolder: 'newFolderTab' };
+
+function tabLabel(k) {
+  if (k.startsWith('doc:')) { const v = visits.find(x => x.id === k.slice(4)); return !v ? 'Doc' : v.unsaved ? `✚ ${T('newVisitTab')}${v.ladang ? ' · ' + v.ladang : ''}` : `Doc ${docLabel(v)} · ${v.ladang || T('noEstate')}`; }
+  return T(PAGE_LABEL[k]);
+}
+function renderTabs() {
+  const el = $('tabs'); el.innerHTML = '';
+  tabs.forEach(k => {
+    const t = document.createElement('div'); t.className = 'tab' + (k === active ? ' on' : '');
+    const s = document.createElement('span'); s.textContent = tabLabel(k);
+    const x = document.createElement('span'); x.className = 'x'; x.textContent = '✕'; x.title = 'Close';
+    x.onclick = e => { e.stopPropagation(); closeTab(k); };
+    t.onclick = () => go(k);
+    t.append(s, x); el.appendChild(t);
+  });
+  document.querySelectorAll('.side a').forEach(a => a.classList.toggle('on', a.dataset.nav === active));
+  localStorage.setItem('ll.tabs', JSON.stringify({ tabs, active }));
+}
+async function go(k) {
+  if (k === 'new') return createVisit();
+  if (k === 'settings' && me && me.role !== 'admin') k = 'home';
+  if (isPhone && !PHONE_OK(k)) k = 'photos';
+  if (k.startsWith('doc:') && !visits.some(v => v.id === k.slice(4))) k = 'list';
+  await flushSave();
+  if (!tabs.includes(k)) tabs.push(k);
+  active = k;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  const pid = k.startsWith('doc:') ? 'doc' : k;
+  $('pg-' + pid).classList.add('on');
+  $('side').classList.remove('open');
+  $('content').scrollTop = 0;
+  if (k === 'home') renderHome();
+  if (k === 'list') renderList();
+  if (k === 'photos') renderGallery();
+  if (k === 'newfolder') renderNewFolder();
+  if (k === 'report') renderReport();
+  if (k === 'settings') loadSettingsForm();
+  if (k.startsWith('doc:')) await openVisit(k.slice(4));
+  renderTabs();
+}
+async function closeTab(k) {
+  const v = k.startsWith('doc:') && visits.find(x => x.id === k.slice(4));
+  if (v && v.unsaved) {
+    if (v.ladang || v.photoIds.length) { if (!confirm(T('discardQ'))) return; }
+    await flushSave(); await discardVisit(v);
+  }
+  const i = tabs.indexOf(k); tabs.splice(i, 1);
+  if (!tabs.length) tabs = [typeof isPhone !== 'undefined' && isPhone ? 'photos' : 'home'];
+  if (k === active) go(tabs[Math.min(i, tabs.length - 1)]); else renderTabs();
+}
+document.querySelectorAll('[data-nav]').forEach(a => a.onclick = () => go(a.dataset.nav));
+document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
+$('btnMenu').onclick = () => $('side').classList.toggle('open');
+
+/* ---------- Shared table bits ---------- */
+const badge = st => `<span class="badge b-${st}">${esc(T(st))}</span>`;
+function visitRows(list, tbl, { withSub = true } = {}) {
+  tbl.innerHTML = `<thead><tr><th>${T('cDoc')}</th><th>${T('cDate')}</th><th>${T('cEstate')}</th><th>${T('cTitle')}</th><th>${T('cPhotos')}</th><th>${T('cStatus')}</th><th>${T('cNote')}</th><th>${T('cCreated')}</th></tr></thead>`;
+  const tb = document.createElement('tbody');
+  if (!list.length) tb.innerHTML = `<tr><td colspan="8" class="muted">${T('nothing')}</td></tr>`;
+  list.forEach(v => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><span class="doc">${esc(docLabel(v))}</span></td><td>${fmtShort(v.tarikh)}</td><td>${esc(v.ladang || T('noEstate'))}</td>
+      <td>${esc(v.title || '')}</td>
+      <td><button class="cnt-btn">▸ ${v.photoIds.length}</button></td><td>${badge(v.status)}</td>
+      <td class="muted small">${esc(v.note || '')}</td>
+      <td>${esc(v.createdBy || '')}<div class="muted small">${fmtStamp(v.createdAt)}</div></td>`;
+    tr.querySelector('.doc').onclick = () => go('doc:' + v.id);
+    tr.classList.add('click');
+    tr.onclick = e => { if (e.target.closest('button,.doc')) return; go('doc:' + v.id); };
+    const btn = tr.querySelector('.cnt-btn');
+    btn.onclick = async () => {
+      const nx = tr.nextElementSibling;
+      if (nx && nx.classList.contains('sub')) { nx.remove(); btn.textContent = `▸ ${v.photoIds.length}`; return; }
+      btn.textContent = `▾ ${v.photoIds.length}`;
+      for (const pid of v.photoIds) await getPhoto(pid);
+      const sub = document.createElement('tr'); sub.className = 'sub';
+      const td = document.createElement('td'); td.colSpan = 8;
+      td.innerHTML = photoGroupHtml(v); wirePhotoGroup(td, v);
+      sub.appendChild(td); tr.after(sub);
+    };
+    tb.appendChild(tr);
+  });
+  tbl.appendChild(tb);
+}
+async function getPhoto(pid) { if (!photoCache[pid]) { const p = await DB.get('photos', pid); if (p) photoCache[pid] = p; } return photoCache[pid]; }
+function urlOf(p) { return urls[p.id] || (urls[p.id] = URL.createObjectURL(p.blob)); }
+
+function fillSelect(sel, items, allLabel, keep = true) {
+  const old = sel.value;
+  sel.innerHTML = '';
+  if (allLabel) { const o = document.createElement('option'); o.value = ''; o.textContent = allLabel; sel.appendChild(o); }
+  items.forEach(([v, l]) => { const o = document.createElement('option'); o.value = v; o.textContent = l; sel.appendChild(o); });
+  if (keep && [...sel.options].some(o => o.value === old)) sel.value = old;
+}
+const monthsAvail = () => [...new Set([todayKL().slice(0, 7), ...savedV().map(monthOf).filter(Boolean)])].sort().reverse();
+const uniq = arr => [...new Set(arr.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+
+/* ---------- Home ---------- */
+function renderHome() {
+  const ym = todayKL().slice(0, 7), mv = savedV().filter(v => monthOf(v) === ym);
+  $('stVisits').textContent = mv.length;
+  $('stPhotos').textContent = mv.reduce((a, v) => a + v.photoIds.length, 0);
+  $('stEstates').textContent = uniq(mv.map(v => v.ladang)).length;
+  $('stPending').textContent = savedV().filter(v => v.status !== 'synced').length;
+  visitRows(savedV().slice(0, 8), $('tblRecent'));
+}
+$('btnSyncNow').onclick = () => syncAll(true);
+
+/* ---------- List ---------- */
+let listInit = false;
+function renderList() {
+  if (!listInit) {
+    fillSelect($('lMonth'), monthsAvail().map(m => [m, monthLabel(m)]), T('allMonths'), false);
+    $('lMonth').value = todayKL().slice(0, 7);
+    listInit = true;
+  } else fillSelect($('lMonth'), monthsAvail().map(m => [m, monthLabel(m)]), T('allMonths'));
+  fillSelect($('lEstate'), uniq(savedV().map(v => v.ladang)).map(x => [x, x]), T('allEstates'));
+  fillSelect($('lOfficer'), uniq(savedV().map(v => v.createdBy)).map(x => [x, x]), T('allOfficers'));
+  fillSelect($('lStatus'), ['draft', 'pending', 'synced'].map(s => [s, T(s)]), T('allStatus'));
+  const q = $('lSearch').value.trim().toLowerCase();
+  const m = $('lMonth').value, e = $('lEstate').value, o = $('lOfficer').value, s = $('lStatus').value;
+  const list = savedV().filter(v => {
+    if (q) {
+      const caps = v.photoIds.map(id => photoCache[id]?.caption || '').join(' ');
+      return `${v.docNo} ${v.ladang} ${v.pegawai} ${v.createdBy} ${v.title} ${v.note || ''} ${caps}`.toLowerCase().includes(q);
+    }
+    return (!m || monthOf(v) === m) && (!e || v.ladang === e) && (!o || v.createdBy === o) && (!s || v.status === s);
+  }).sort((a, b) => (b.tarikh || '').localeCompare(a.tarikh || '') || b.createdAt - a.createdAt);
+  visitRows(list, $('tblList'));
+  $('lFoot').textContent = T('footList', list.length, list.reduce((a, v) => a + v.photoIds.length, 0));
+}
+['lSearch', 'lMonth', 'lEstate', 'lOfficer', 'lStatus'].forEach(id => $(id).addEventListener(id === 'lSearch' ? 'input' : 'change', renderList));
+
+/* ---------- Photos page (same as Papan) ---------- */
+let phEstate = '', phOpen = null, phShow = 'all', phMsg = '', phEdit = false;
+const fcount = f => f.photoIds.length;
+const isWait = f => !!f.isFolder;
+async function renderGallery() {
+  fillSelect($('gShow'), [['all', T('showAll')], ['waiting', T('showWait')], ['attached', T('showAtt')]], null);
+  $('gShow').value = phShow;
+  $('phNew').textContent = '+ ' + T('newFolderTab');
+  const okShow = f => phShow === 'all' || (phShow === 'waiting' ? isWait(f) : !isWait(f));
+  // every visit = an attached folder; every loose folder = waiting
+  const ALL = [...folders, ...savedV()];
+  for (const f of ALL) for (const pid of f.photoIds) await getPhoto(pid);
+  if (phOpen && !ALL.some(f => f.id === phOpen)) phOpen = null;
+  $('phMsg').innerHTML = phMsg ? `<p style="color:var(--green);font-size:13px;margin:0 0 10px">✔ ${esc(phMsg)}</p>` : '';
+  const crumbs = $('phCrumbs'), main = $('phMain'), panel = $('phPanel');
+  if (!phEstate) {
+    crumbs.innerHTML = ''; panel.innerHTML = '';
+    const ests = uniq([...estateNames(), ...ALL.map(f => f.ladang)]);
+    const tiles = ests.map(e => {
+      const F = ALL.filter(f => f.ladang === e && okShow(f)), w = F.filter(isWait).length, n = F.reduce((a, f) => a + fcount(f), 0);
+      return `<div class="etile" data-e="${esc(e)}"><div class="eic">📂</div><div><b>${esc(e)}</b>
+        <div class="muted small">${esc(T('nFolders', F.length))} · ${esc(T('nPhotos', n))}</div>${w ? `<span class="bdg-w">${esc(T('nWaiting', w))}</span>` : ''}</div></div>`;
+    }).join('');
+    main.innerHTML = `<h2>${esc(T('byEstate2'))}</h2><div class="etiles">${tiles || `<span class="muted">${esc(T('noEstatesYet'))}</span>`}</div><p class="muted small" style="margin:10px 0 0">${esc(T('clickEstate'))}</p>`;
+    main.querySelectorAll('.etile').forEach(el => el.onclick = () => { phEstate = el.dataset.e; phOpen = null; phMsg = ''; phEdit = false; renderGallery(); $('content').scrollTop = 0; });
+    return;
+  }
+  crumbs.innerHTML = `<a id="phBack">${esc(T('allEstatesCrumb'))}</a> › <b>${esc(phEstate)}</b>`;
+  $('phBack').onclick = () => { phEstate = ''; phOpen = null; phMsg = ''; phEdit = false; renderGallery(); };
+  // open folder panel
+  const of = phOpen && ALL.find(f => f.id === phOpen);
+  if (of) {
+    const wait = isWait(of), ref = wait ? of.docNo : 'P-' + of.docNo;
+    panel.innerHTML = `<div class="card" style="border-color:#93c5fd;margin-bottom:14px">
+      <div class="row-actions" style="margin-bottom:10px"><b style="font-size:15px">📁 ${esc(ref)}</b>
+        <span class="muted small">${esc(of.ladang)}${of.note ? ' · ' + esc(of.note) : ''} · ${esc(of.createdBy || '')} · ${fmtStamp(of.createdAt)}</span>
+        ${wait ? `<span class="bdg-w">${esc(T('waitBadge'))}</span>` : `<button class="btn-ghost sm" id="phOpenDoc">${esc(T('attTo', of.docNo))}</button>`}<span style="flex:1"></span>
+        <button class="btnlike" id="phCam">${esc(T('takePhoto'))}</button><button class="btnlike" id="phAdd">${esc(T('addPhotos'))}</button>
+        ${wait ? `<button class="btn-ghost" id="phEditB">${esc(T('edit'))}</button>` : ''}
+        <button class="btn-ghost" id="phPrintAll">${esc(T('printAll'))}</button><button class="btn-ghost" id="phDlAll">${esc(T('dlAllShort'))}</button>
+        ${wait ? `<button class="btn-danger" id="phDelF">${esc(T('delFolder'))}</button>` : ''}<button class="btn-ghost" id="phClose">${esc(T('close'))}</button></div>
+      ${wait && phEdit ? `<div class="card" style="background:#f8fafc;margin:0 0 12px"><div class="grid2">
+          <div><label class="f req">${esc(T('folderRef'))}</label><input class="f-in" id="feRef" style="text-transform:uppercase" value="${esc(of.docNo)}"></div>
+          <div><label class="f req">${esc(T('estate'))}</label><select class="f-in" id="feEst">${estateNames().map(n => `<option ${n === of.ladang ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></div>
+          <div style="grid-column:1/-1"><label class="f">${esc(T('noteOpt'))}</label><input class="f-in" id="feNote" value="${esc(of.note || '')}"></div></div>
+          <div class="row-actions" style="margin-top:10px"><button class="btn" id="feSave">${esc(T('saveChanges'))}</button><button class="btn-ghost" id="feCancel">${esc(T('cancel'))}</button></div></div>` : ''}
+      <div id="phThumbs"></div></div>`;
+    const box = $('phThumbs'); box.innerHTML = photoGroupHtml(of).replace(/^<div class="fref">[\s\S]*?<\/div>/, ''); wirePhotoGroup(box, of);
+    $('phOpenDoc') && ($('phOpenDoc').onclick = () => go('doc:' + of.id));
+    $('phClose').onclick = () => { phOpen = null; phEdit = false; renderGallery(); };
+    $('phPrintAll').onclick = () => of.photoIds.length ? openPrintDlg(of) : toast(T('noPhotosYet'));
+    $('phDlAll').onclick = () => downloadAll(of);
+    $('phCam').onclick = () => openCam(of);
+    $('phAdd').onclick = () => $('fPickF').click();
+    if (wait) {
+      $('phEditB').onclick = () => { phEdit = !phEdit; renderGallery(); };
+      $('phDelF').onclick = async () => {
+        if (!confirm(T('delFolderQ'))) return;
+        for (const pid of of.photoIds) { await DB.del('photos', pid); delete photoCache[pid]; }
+        if (of.syncedAt) queueTrash(of.id);
+        folders = folders.filter(f => f !== of); await saveFolders(); phOpen = null; renderGallery();
+      };
+      if (phEdit) {
+        $('feCancel').onclick = () => { phEdit = false; renderGallery(); };
+        $('feSave').onclick = async () => {
+          const r = $('feRef').value.trim().toUpperCase(); if (!r) return toast(T('refEmpty'));
+          of.docNo = r; of.ladang = $('feEst').value; of.note = $('feNote').value.trim(); of.status = 'pending'; of.updatedAt = Date.now();
+          await saveFolders(); phEdit = false; phEstate = of.ladang; phMsg = T('folderSaved', r); renderGallery();
+        };
+      }
+    }
+  } else panel.innerHTML = '';
+  const F = ALL.filter(f => f.ladang === phEstate && okShow(f)).sort((a, b) => b.createdAt - a.createdAt);
+  main.innerHTML = `<h2>${esc(T('estFolders', phEstate))}</h2><div class="folds">${F.map(f => {
+      const cover = f.photoIds.map(id => photoCache[id]).find(Boolean), wait = isWait(f);
+      return `<div class="fold ${wait ? 'wait' : ''} ${f.id === phOpen ? 'on' : ''}" data-id="${f.id}"><div class="fcover">${cover ? `<img src="${urlOf(cover)}" alt="">` : '📁'}</div>
+        <div class="fmeta"><b>📁 ${esc(wait ? f.docNo : 'P-' + f.docNo)}</b><span>${esc(f.ladang)} ${wait ? '' : `<span class="bdg-ok">✔ ${esc(f.docNo)}</span>`}</span>
+        <span class="muted">📷 ${esc(T('nPhotos', fcount(f)))} · ${fmtStamp(f.createdAt)}</span>${f.note ? `<span class="muted">${esc(f.note)}</span>` : ''}</div></div>`;
+    }).join('') || `<span class="muted small">${esc(T('noFolders'))}</span>`}</div><p class="muted small" style="margin:10px 0 0">${esc(T('folderClickHint'))}</p>`;
+  main.querySelectorAll('.fold').forEach(el => el.onclick = () => { phOpen = el.dataset.id; phEdit = false; phMsg = ''; renderGallery(); $('content').scrollTop = 0; });
+}
+$('gShow').addEventListener('change', e => { phShow = e.target.value; phOpen = null; renderGallery(); });
+$('phNew').onclick = () => { nf.estate = phEstate || nf.estate; go('newfolder'); };
+const phTarget = () => folders.find(x => x.id === phOpen) || visits.find(x => x.id === phOpen);
+$('fPickF').onchange = e => { const f = phTarget(); if (f) addFiles(e.target.files, f); e.target.value = ''; };
+$('fCamF').onchange = e => { const f = phTarget(); if (f) addFiles(e.target.files, f); e.target.value = ''; };
+
+/* ---------- New photo folder (own tab, like Papan) ---------- */
+const nf = { estate: '', pick: [] };
+function renderNewFolder() {
+  const sel = $('nfEstate');
+  sel.innerHTML = `<option value="">${esc(T('chooseEstate'))}</option>` + estateNames().map(n => `<option ${n === nf.estate ? 'selected' : ''}>${esc(n)}</option>`).join('') + `<option value="__new">${esc(T('newEstate'))}</option>`;
+  sel.value = nf.estate;
+  $('nfRef').placeholder = nf.estate ? T('autoRef', folderRefAuto().ref) : T('autoRefNone');
+  $('nfThumbs').innerHTML = nf.pick.map((p, i) => `<div class="th"><img src="${p.url}" alt=""><button class="thx" data-i="${i}" title="Remove">×</button></div>`).join('');
+  $('nfThumbs').querySelectorAll('.thx').forEach(b => b.onclick = () => { URL.revokeObjectURL(nf.pick[+b.dataset.i].url); nf.pick.splice(+b.dataset.i, 1); renderNewFolder(); });
+  $('nfSave').textContent = T('saveFolder', nf.pick.length);
+}
+$('nfEstate').addEventListener('change', async e => {
+  let v = e.target.value;
+  if (v === '__new') {
+    v = (prompt(T('newEstateQ')) || '').trim().toUpperCase();
+    if (v && !estateNames().includes(v)) { settings.estates.push(v); await saveSettings(); }
+  }
+  nf.estate = v || ''; e.target.classList.remove('bad'); renderNewFolder();
+});
+async function nfAdd(files) {
+  for (const f of [...files].filter(f => f.type.startsWith('image/'))) { try { const blob = await shrink(f); nf.pick.push({ blob, url: URL.createObjectURL(blob) }); } catch { toast(T('readFail', f.name)); } }
+  renderNewFolder();
+}
+$('nfPick').onclick = () => $('nfPickIn').click();
+$('nfCam').onclick = () => isTouch ? $('nfCamIn').click() : openCam({ nf: true });
+$('nfPickIn').onchange = e => { nfAdd(e.target.files); e.target.value = ''; };
+$('nfCamIn').onchange = e => { nfAdd(e.target.files); e.target.value = ''; };
+function nfReset() { nf.pick.forEach(p => URL.revokeObjectURL(p.url)); nf.pick = []; $('nfRef').value = ''; $('nfNote').value = ''; }
+$('nfCancel').onclick = () => { nfReset(); closeTab('newfolder'); };
+$('nfSave').onclick = async () => {
+  if (!nf.estate) { $('nfEstate').classList.add('bad'); $('nfEstate').focus(); return toast(T('fillA')); }
+  const f = newFolder(nf.estate, $('nfRef').value.trim(), $('nfNote').value.trim());
+  for (const p of nf.pick) {
+    const rec = { id: uid(), visitId: f.id, blob: p.blob, caption: '', at: Date.now(), by: meName() };
+    await DB.put('photos', rec); photoCache[rec.id] = rec; f.photoIds.push(rec.id);
+  }
+  await saveFolders();
+  const n = nf.pick.length; nfReset();
+  updateNet();
+  phEstate = f.ladang; phOpen = f.id; phShow = 'all'; phMsg = T('folderSaved', f.docNo) + (n ? ' ' + T('nPhotos', n) : '');
+  tabs = tabs.filter(t => t !== 'newfolder'); await go('photos');
+};
+
+/* ---------- Monthly report ---------- */
+function reportData(ym) {
+  const mv = savedV().filter(v => monthOf(v) === ym).sort((a, b) => (a.docNo || '').localeCompare(b.docNo || '', undefined, { numeric: true }));
+  const group = key => {
+    const m = new Map();
+    mv.forEach(v => {
+      const keys = key === 'ladang' ? [v.ladang || '-'] : [v.createdBy || '-'];
+      keys.forEach(k => {
+        if (!m.has(k)) m.set(k, { name: k, visits: 0, photos: 0, other: new Set(), docs: [] });
+        const r = m.get(k); r.visits++; r.photos += v.photoIds.length;
+        (key === 'ladang' ? [v.createdBy] : [v.ladang]).forEach(o => o && r.other.add(o)); r.docs.push(docLabel(v));
+      });
+    });
+    return [...m.values()].sort((a, b) => a.name.localeCompare(b.name));
+  };
+  return { mv, est: group('ladang'), off: group('pegawai') };
+}
+function renderReport() {
+  const months = monthsAvail();
+  fillSelect($('rMonth'), months.map(m => [m, monthLabel(m)]), null);
+  if (!$('rMonth').value) $('rMonth').value = months[0];
+  const { mv, est, off } = reportData($('rMonth').value);
+  $('rStats').innerHTML = `
+    <div class="stat"><div class="n">${mv.length}</div><div class="l">${T('cVisits')}</div></div>
+    <div class="stat"><div class="n">${mv.reduce((a, v) => a + v.photoIds.length, 0)}</div><div class="l">${T('cPhotos')}</div></div>
+    <div class="stat"><div class="n">${est.length}</div><div class="l">${T('cEstate')}</div></div>
+    <div class="stat"><div class="n">${off.length}</div><div class="l">${T('cOfficer')}</div></div>`;
+  const table = (tbl, rows, first, otherLabel, withCode) => {
+    tbl.innerHTML = `<thead><tr><th>${first}</th>${withCode ? `<th>${T('cCode')}</th>` : ''}<th class="num">${T('cVisits')}</th><th class="num">${T('cPhotos')}</th><th>${otherLabel}</th><th>${T('cDocs')}</th></tr></thead>
+      <tbody>${rows.length ? rows.map(r => `<tr><td>${esc(r.name)}</td>${withCode ? `<td>${esc(estCode(r.name))}</td>` : ''}<td class="num">${r.visits}</td><td class="num">${r.photos}</td><td>${esc([...r.other].join(', '))}</td><td class="small">${esc(r.docs.join(', '))}</td></tr>`).join('') : `<tr><td colspan="6" class="muted">${T('noData')}</td></tr>`}</tbody>
+      <tfoot><tr><td>${T('total')}</td>${withCode ? '<td></td>' : ''}<td class="num">${mv.length}</td><td class="num">${mv.reduce((a, v) => a + v.photoIds.length, 0)}</td><td></td><td></td></tr></tfoot>`;
+  };
+  table($('tblRepEstate'), est, T('cEstate'), T('cOfficer'), false);
+  table($('tblRepOfficer'), off, T('cOfficer'), T('cEstate'), false);
+}
+$('rMonth').addEventListener('change', renderReport);
+
+$('btnRepCsv').onclick = () => {
+  const ym = $('rMonth').value, { mv } = reportData(ym);
+  if (!mv.length) return toast(T('noData'));
+  const L = PDF_STR[settings.pdfLang];
+  const rows = [[T('cDoc'), T('cDate'), T('cEstate'), T('cTitle'), T('cOfficer'), T('cPhotos'), T('cStatus'), T('cCreated'), L.photo + ' / caption']];
+  mv.forEach(v => rows.push([docLabel(v), fmtDate(v.tarikh), v.ladang, v.title, v.pegawai, v.photoIds.length, T(v.status).replace(/[⏳✅]\s?/, ''), v.createdBy || '',
+    v.photoIds.map((id, i) => `${i + 1}. ${photoCache[id]?.caption || ''}`).join(' | ')]));
+  const csv = '﻿' + rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  downloadBlob(new Blob([csv], { type: 'text/csv' }), `Laporan_Lawatan_${ym}.csv`);
+};
+
+$('btnRepPdf').onclick = async () => {
+  if (!window.jspdf) return toast(T('noLib'));
+  const ym = $('rMonth').value, { mv, est, off } = reportData(ym);
+  if (!mv.length) return toast(T('noData'));
+  for (const v of mv) for (const id of v.photoIds) await getPhoto(id);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = 210, H = 297, M = 15;
+  let y = M;
+  const logo = await getLogo();
+  if (logo) { try { const pr = doc.getImageProperties(logo), s = Math.min(18 / pr.width, 18 / pr.height); doc.addImage(logo, pr.fileType || 'JPEG', M, y - 3, pr.width * s, pr.height * s); } catch {} }
+  doc.setFont('Helvetica', 'bold'); doc.setFontSize(14);
+  const t1 = T('repTitle'); doc.text(t1, (W - doc.getTextWidth(t1)) / 2, y + 4);
+  doc.setFont('Helvetica', 'normal'); doc.setFontSize(11);
+  const t2 = `${settings.company} · ${monthLabel(ym)}`; doc.text(t2, (W - doc.getTextWidth(t2)) / 2, y + 11);
+  doc.setFontSize(7); doc.text(settings.rev, W - M - doc.getTextWidth(settings.rev), y - 4);
+  y += 22;
+  const drawTable = (head, widths, rows, bold = []) => {
+    const lineH = 5;
+    const row = (cells, isHead) => {
+      doc.setFont('Helvetica', isHead ? 'bold' : 'normal'); doc.setFontSize(9);
+      const wrapped = cells.map((c, i) => doc.splitTextToSize(String(c ?? ''), widths[i] - 3));
+      const h = Math.max(...wrapped.map(w => w.length)) * lineH + 3;
+      if (y + h > H - 18) { doc.addPage(); y = M; }
+      if (isHead) { doc.setFillColor(238, 241, 246); doc.rect(M, y, W - 2 * M, h, 'F'); }
+      let x = M;
+      wrapped.forEach((w, i) => { doc.text(w, x + 1.5, y + 5); x += widths[i]; });
+      doc.setDrawColor(220); doc.line(M, y + h, W - M, y + h);
+      y += h;
+    };
+    row(head, true); rows.forEach(r => row(r, bold.includes(r)));
+    y += 6;
+  };
+  const sec = s => { doc.setFont('Helvetica', 'bold'); doc.setFontSize(11); if (y > H - 30) { doc.addPage(); y = M; } doc.text(s, M, y); y += 4; };
+  sec(T('byEstate'));
+  const totRow = [T('total'), mv.length, mv.reduce((a, v) => a + v.photoIds.length, 0), '', ''];
+  drawTable([T('cEstate'), T('cVisits'), T('cPhotos'), T('cOfficer'), T('cDocs')], [45, 18, 18, 49, 50],
+    [...est.map(r => [r.name, r.visits, r.photos, [...r.other].join(', '), r.docs.join(', ')]), totRow], [totRow]);
+  sec(T('byOfficer'));
+  drawTable([T('cOfficer'), T('cVisits'), T('cPhotos'), T('cEstate'), T('cDocs')], [45, 18, 18, 49, 50],
+    off.map(r => [r.name, r.visits, r.photos, [...r.other].join(', '), r.docs.join(', ')]));
+  sec(T('visitList'));
+  drawTable([T('cDoc'), T('cDate'), T('cEstate'), T('cTitle'), T('cOfficer'), T('cPhotos')], [24, 22, 38, 40, 40, 16],
+    mv.map(v => [docLabel(v), fmtDate(v.tarikh), v.ladang, v.title, v.pegawai, v.photoIds.length]));
+  const total = doc.getNumberOfPages();
+  for (let p = 1; p <= total; p++) {
+    doc.setPage(p); doc.setFont('Helvetica', 'normal'); doc.setFontSize(8); doc.setDrawColor(150);
+    doc.line(M, H - 12, W - M, H - 12);
+    const ft = PDF_STR[settings.pdfLang].page(p, total); doc.text(ft, (W - doc.getTextWidth(ft)) / 2, H - 6);
+  }
+  doc.save(`Laporan_Bulanan_${ym}.pdf`);
+};
+
+/* ---------- Visit (doc) ---------- */
+function logEv(v, what, n) { (v.log ||= []).push({ what, t: Date.now(), by: meName(), n }); }
+let editMode = false, editDirty = false;
+function setMode(edit) {
+  if (cur?.unsaved) edit = true;
+  $('btnView').textContent = cur?.unsaved ? T('saveVisit') : T('doneEditing');
+  $('btnDiscard').style.display = cur?.unsaved ? '' : 'none';
+  ['btnPdf', 'btnPdfDl', 'btnDelVisit'].forEach(id => $(id).style.display = cur?.unsaved ? 'none' : '');
+  if (!edit && editMode && editDirty && cur) { logEv(cur, 'edited'); editDirty = false; saveNow(); }
+  editMode = edit;
+  $('docView').style.display = edit ? 'none' : '';
+  $('docEdit').style.display = edit ? '' : 'none';
+  $('btnEdit').style.display = edit ? 'none' : '';
+  if (!edit) renderView(); else editDirty = false;
+}
+function renderSheets(v, sh) {
+  const L = PDF_STR[settings.pdfLang], firstOnly = settings.header === 'first';
+  const logo = settings.logo || DEFAULT_LOGO, title = v.title || settings.titles[0];
+  const ids = v.photoIds, pages = Math.max(1, Math.ceil(ids.length / 4)); sh.innerHTML = '';
+  for (let pg = 0; pg < pages; pg++) {
+    const d = document.createElement('div'); d.className = 'sheet';
+    const head = (pg === 0 || !firstOnly) ? `
+      <div class="sh-head"><img src="${logo}"><div class="sh-rev">${esc(settings.rev)}</div>
+        <div class="sh-title">${esc(title)}</div><div class="sh-off">${esc(offsOf(v).join(', ') || v.createdBy || '')}</div></div>
+      <div class="sh-meta"><div>${L.loc}: ${esc(v.ladang)}<br>${L.date}: ${fmtDate(v.tarikh)}</div><div class="no">No: ${esc(v.docNo || '')}</div></div>` : '';
+    let grid = '';
+    for (let i = pg * 4; i < Math.min(ids.length, pg * 4 + 4); i++) {
+      const p = photoCache[ids[i]];
+      grid += `<div class="sh-box"><div class="sh-img" data-i="${i}" style="cursor:zoom-in">${p ? `<img src="${urlOf(p)}">` : ''}</div><div class="sh-lbl">${L.photo} ${i + 1}</div><div class="sh-cap">${esc(p?.caption || '')}</div></div>`;
+    }
+    d.innerHTML = `<div class="sheet-in">${head}<div class="sh-grid">${grid}</div><div class="sh-foot">${esc(L.page(pg + 1, pages))}</div></div>`;
+    d.querySelectorAll('.sh-img[data-i]').forEach(el => el.onclick = () => openViewer(v, +el.dataset.i));
+    sh.appendChild(d);
+  }
+}
+
+/* ---------- Photo folders (taken before a visit) ---------- */
+let folders = [];
+const saveFolders = () => DB.put('settings', folders.map(f => ({ ...f })), 'folders');
+const saveObj = v => v.isFolder ? saveFolders() : DB.put('visits', v);
+const waitingFor = e => folders.filter(f => f.ladang === e).sort((a, b) => b.createdAt - a.createdAt);
+function folderRefAuto() {
+  const code = userCode({ createdByU: me?.u, createdBy: meName() }), mm = String(+todayKL().slice(5, 7)), key = code + '/' + todayKL().slice(0, 7);
+  return { key, ref: `F-${code}-${((settings.fseq || {})[key] || 0) + 1}/${mm}` };
+}
+function newFolder(estate, ref, note) {
+  const a = folderRefAuto();
+  if (!ref) { settings.fseq = settings.fseq || {}; settings.fseq[a.key] = (settings.fseq[a.key] || 0) + 1; saveSettings(); ref = a.ref; }
+  const f = { id: uid(), isFolder: true, docNo: ref.toUpperCase(), note: note || '', ladang: estate, tarikh: todayKL(), title: '', photoIds: [], createdBy: meName(), createdAt: Date.now(), status: 'pending', updatedAt: Date.now() };
+  folders.push(f); saveFolders(); return f;
+}
+async function attachFolder(f) {
+  (cur.attached ||= []).push({ id: f.id, docNo: f.docNo, note: f.note || '', ladang: f.ladang, tarikh: f.tarikh, createdBy: f.createdBy, createdAt: f.createdAt, photoIds: [...f.photoIds], at: Date.now(), by: meName() });
+  if (f.syncedAt) queueTrash(f.id);
+  for (const pid of f.photoIds) { const p = await getPhoto(pid); if (!p) continue; p.visitId = cur.id; await DB.put('photos', { id: p.id, visitId: p.visitId, blob: p.blob, caption: p.caption, at: p.at, by: p.by }); cur.photoIds.push(pid); }
+  folders = folders.filter(x => x !== f); await saveFolders();
+  logEv(cur, 'photos', f.photoIds.length);
+  markChanged(); await saveNow(); renderPhotos(); renderAttach();
+  toast(T('attached', f.photoIds.length));
+}
+async function movePhotoBack(v, pid, quiet) {
+  const p = await getPhoto(pid); if (!p) return;
+  const a = (v.attached || []).find(x => x.photoIds.includes(pid));
+  let f;
+  if (a) {   // came from a photo folder: return it to that folder
+    f = folders.find(x => x.id === a.id);
+    if (!f) { f = { id: a.id, isFolder: true, docNo: a.docNo, note: a.note, ladang: a.ladang, tarikh: a.tarikh, title: '', photoIds: [], createdBy: a.createdBy, createdAt: a.createdAt }; folders.push(f); }
+    a.photoIds = a.photoIds.filter(x => x !== pid);
+    if (!a.photoIds.some(id => v.photoIds.includes(id) && id !== pid)) v.attached = v.attached.filter(x => x !== a);
+  } else {   // uploaded straight into the visit: put it in a "moved from" folder
+    f = folders.find(x => x.movedFrom === v.id && x.ladang === v.ladang);
+    if (!f) { f = newFolder(v.ladang, '', T('movedFrom', v.docNo || docLabel(v))); f.movedFrom = v.id; }
+  }
+  v.photoIds = v.photoIds.filter(x => x !== pid);
+  p.visitId = f.id; await DB.put('photos', { id: p.id, visitId: f.id, blob: p.blob, caption: p.caption, at: p.at, by: p.by });
+  f.photoIds.push(pid); f.status = 'pending'; f.updatedAt = Date.now(); await saveFolders();
+  logEv(v, 'detached', 1);
+  v.updatedAt = Date.now(); if (v.status === 'synced') v.status = 'pending';
+  if (v === cur) { markChanged(); await saveNow(); renderPhotos(); renderAttach(); renderView(); } else await DB.put('visits', v);
+  if (!quiet) toast(T('moved', f.docNo));
+  if (active === 'photos') renderGallery(); if (active === 'list') renderList();
+  return f.docNo;
+}
+async function detachFolder(a) {
+  const ids = a.photoIds.filter(id => cur.photoIds.includes(id));
+  cur.photoIds = cur.photoIds.filter(id => !ids.includes(id));
+  for (const pid of ids) { const p = await getPhoto(pid); if (!p) continue; p.visitId = a.id; await DB.put('photos', { id: p.id, visitId: a.id, blob: p.blob, caption: p.caption, at: p.at, by: p.by }); }
+  folders.push({ id: a.id, isFolder: true, docNo: a.docNo, note: a.note, ladang: a.ladang, tarikh: a.tarikh, title: '', photoIds: ids, createdBy: a.createdBy, createdAt: a.createdAt, status: 'pending', updatedAt: Date.now() });
+  await saveFolders();
+  cur.attached = cur.attached.filter(x => x !== a);
+  logEv(cur, 'detached', ids.length);
+  markChanged(); await saveNow(); renderPhotos(); renderAttach();
+  toast(T('undone', a.docNo));
+}
+async function renderAttach() {
+  if (!cur) return;
+  const e = cur.ladang, W = e ? waitingFor(e) : [];
+  const A = (cur.attached || []).filter(a => a.photoIds.some(id => cur.photoIds.includes(id)));
+  for (const f of W) for (const pid of f.photoIds) await getPhoto(pid);
+  const row = (o, on, k) => {
+    const ids = on ? o.photoIds.filter(id => cur.photoIds.includes(id)) : o.photoIds, cover = ids.map(id => photoCache[id]).find(Boolean);
+    return `<label class="attrow ${on ? 'on' : ''}"><input type="checkbox" data-k="${k}" ${on ? 'checked' : ''}>
+      <div class="fcover">${cover ? `<img src="${urlOf(cover)}" alt="">` : '📁'}</div>
+      <div class="fmeta"><b>📁 ${esc(o.docNo)} ${on ? `<span class="bdg-ok">${esc(T('attachedOk'))}</span>` : `<span class="bdg-w">${esc(T('waitBadge'))}</span>`}</b>
+      <span class="muted">📷 ${esc(T('nPhotos', ids.length))} · ${esc(o.createdBy || '')} · ${fmtStamp(o.createdAt)}</span>${o.note ? `<span class="muted">${esc(o.note)}</span>` : ''}</div></label>`;
+  };
+  const items = [...A.map(a => ({ o: a, on: true })), ...W.map(f => ({ o: f, on: false }))];
+  const html = !e ? `<p class="muted" style="margin:0 0 4px">${esc(T('chooseEstateFirst'))}</p>`
+    : !items.length ? `<p class="muted" style="margin:0 0 4px">${esc(T('noFoldersFor', e))}</p>`
+    : `<p class="muted small" style="margin:0 0 8px">${esc(T('tickHint'))}</p>` + items.map((it, k) => row(it.o, it.on, k)).join('');
+  const wire = box => box.querySelectorAll('input[data-k]').forEach(cb => cb.onchange = async () => {
+    cb.disabled = true;
+    const it = items[+cb.dataset.k];
+    if (cb.checked) await attachFolder(it.o); else await detachFolder(it.o);
+    renderView();
+  });
+  const box = $('attachList'); box.innerHTML = html; wire(box);
+  const vb = $('vAttach');
+  if (vb) { vb.innerHTML = items.length ? `<div class="att-h" style="margin-top:12px">📎 ${esc(T('attachH'))}</div>` + html : ''; wire(vb); }
+  $('newPhSum').textContent = W.length || A.length ? T('moreNew') : T('noFolderYet');
+}
+
+/* ---------- Lightbox (Papan style) ---------- */
+const LB = { v: null, i: 0 };
+const phMeta = (v, p) => `${p.by || v.createdBy || ''} · ${fmtStamp(p.at || v.createdAt)}`;
+async function openViewer(v, i) {
+  if (!v.photoIds.length) return toast(T('noPhotosYet'));
+  for (const pid of v.photoIds) await getPhoto(pid);
+  LB.v = v; showLB(i);
+}
+function showLB(i) {
+  const v = LB.v, ids = v.photoIds; if (!ids.length) return closeLB();
+  LB.i = (i + ids.length) % ids.length;
+  const p = photoCache[ids[LB.i]];
+  $('lbImg').src = urlOf(p);
+  $('lbCap').innerHTML = `<b>${esc(docLabel(v))} · ${esc(v.ladang || T('noEstate'))}</b> · ${esc(PDF_STR[settings.pdfLang].photo)} ${LB.i + 1}${p.caption ? ' — ' + esc(p.caption) : ''}<br><span style="opacity:.75">${esc(phMeta(v, p))}${ids.length > 1 ? '   ·   ' + (LB.i + 1) + ' / ' + ids.length : ''}</span>`;
+  $('lbClose').textContent = T('close'); $('lbDl').textContent = '⬇ ' + T('download'); $('lbPrint').textContent = T('printNow');
+  $('lbOpen').textContent = T('openVisit'); $('lbOpen').style.display = (v.isFolder || active === 'doc:' + v.id) ? 'none' : '';
+  $('lbDel').textContent = T('delPhoto');
+  $('lbMove').textContent = T('moveBack'); $('lbMove').style.display = v.isFolder ? 'none' : '';
+  $('lbPrev').style.display = $('lbNext').style.display = ids.length > 1 ? '' : 'none';
+  $('lb').hidden = false;
+}
+function closeLB() { $('lb').hidden = true; }
+$('lbPrev').onclick = e => { e.stopPropagation(); showLB(LB.i - 1); };
+$('lbNext').onclick = e => { e.stopPropagation(); showLB(LB.i + 1); };
+$('lbClose').onclick = closeLB;
+$('lb').addEventListener('click', e => { if (e.target === $('lb')) closeLB(); });
+$('lbDl').onclick = () => { const v = LB.v, p = photoCache[v.photoIds[LB.i]]; downloadBlob(p.blob, `${safe(v.docNo || v.ladang) || 'Visit'}_${PDF_STR[settings.pdfLang].photo}_${String(LB.i + 1).padStart(2, '0')}.jpg`); };
+$('lbPrint').onclick = () => openPrintDlg(LB.v, [LB.i]);
+$('lbOpen').onclick = () => { closeLB(); go('doc:' + LB.v.id); };
+$('lbMove').onclick = async () => {
+  const v = LB.v, pid = v.photoIds[LB.i];
+  if (!confirm(T('moveQ'))) return;
+  await movePhotoBack(v, pid);
+  if (v.photoIds.length) showLB(Math.min(LB.i, v.photoIds.length - 1)); else closeLB();
+};
+$('lbDel').onclick = async () => {
+  const v = LB.v, pid = v.photoIds[LB.i];
+  if (!confirm(T('delPhotoQ'))) return;
+  v.photoIds = v.photoIds.filter(x => x !== pid);
+  await DB.del('photos', pid); if (urls[pid]) URL.revokeObjectURL(urls[pid]); delete urls[pid]; delete photoCache[pid];
+  v.updatedAt = Date.now(); if (v.status === 'synced') v.status = 'pending';
+  if (v === cur) { markChanged(); renderPhotos(); await saveNow(); } else await saveObj(v);
+  toast(T('photoDeleted'));
+  if (v.photoIds.length) showLB(Math.min(LB.i, v.photoIds.length - 1)); else closeLB();
+  refreshActive(); if (active === 'photos') renderGallery();
+};
+document.addEventListener('keydown', e => {
+  if ($('lb').hidden) return;
+  if (e.key === 'ArrowLeft') showLB(LB.i - 1); else if (e.key === 'ArrowRight') showLB(LB.i + 1); else if (e.key === 'Escape') closeLB();
+});
+let tx0 = null;
+$('lbImg').addEventListener('touchstart', e => tx0 = e.touches[0].clientX, { passive: true });
+$('lbImg').addEventListener('touchend', e => { if (tx0 === null) return; const dx = e.changedTouches[0].clientX - tx0; if (Math.abs(dx) > 40) showLB(LB.i + (dx < 0 ? 1 : -1)); tx0 = null; });
+
+/* ---------- Print photos (1 / 2 / 4 per A4) ---------- */
+const PD = { v: null, idx: [] };
+function openPrintDlg(v, idx) {
+  PD.v = v; PD.idx = idx || v.photoIds.map((_, i) => i);
+  const per = PD.idx.length === 1 ? 1 : 4;
+  document.querySelectorAll('#pdlg input[name=pdper]').forEach(r => r.checked = +r.value === per);
+  document.querySelectorAll('#pdlg input[name=pdori]').forEach(r => r.checked = r.value === 'auto');
+  $('pdCount').textContent = T('nPhotos', PD.idx.length);
+  $('pdlg').hidden = false;
+}
+$('pdCancel').onclick = () => $('pdlg').hidden = true;
+$('pdlg').addEventListener('click', e => { if (e.target === $('pdlg')) $('pdlg').hidden = true; });
+$('pdGo').onclick = () => {
+  const per = +(document.querySelector('#pdlg input[name=pdper]:checked')?.value || 1), ori = document.querySelector('#pdlg input[name=pdori]:checked')?.value || 'auto';
+  $('pdlg').hidden = true; printPhotos(PD.v, PD.idx, per, ori);
+};
+async function printPhotos(v, idx, per, ori) {
+  const L = PDF_STR[settings.pdfLang];
+  const P = [];
+  for (const i of idx) { const p = await getPhoto(v.photoIds[i]); if (p) P.push({ u: urlOf(p), cap: `${L.photo} ${i + 1}${p.caption ? ' — ' + p.caption : ''}` }); }
+  await Promise.all(P.map(p => new Promise(r => { const im = new Image(); im.onload = () => { p.w = im.naturalWidth; p.h = im.naturalHeight; r(); }; im.onerror = r; im.src = p.u; })));
+  const pages = []; for (let i = 0; i < P.length; i += per) pages.push(P.slice(i, i + per));
+  const wide = p => (p.w || 1) > (p.h || 1), head = `${docLabel(v)} · ${v.ladang} · ${fmtDate(v.tarikh)}`;
+  $('print').innerHTML = pages.map((pg, k) => {
+    let o = ori;
+    if (o === 'auto') o = per === 1 ? (wide(pg[0]) ? 'land' : 'port') : per === 2 ? (pg.every(wide) ? 'port' : 'land') : (pg.filter(wide).length > pg.length / 2 ? 'land' : 'port');
+    const cols = per === 1 ? 1 : per === 2 ? (o === 'land' ? 2 : 1) : 2, rows = per === 1 ? 1 : per === 2 ? (o === 'land' ? 1 : 2) : 2;
+    return `<section class="phs ${o}"><div class="phsh"><b>📁 ${esc(head)}</b><span>${pages.length > 1 ? esc(L.page(k + 1, pages.length)) : ''}</span></div>
+      <div class="phg" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rows},minmax(0,1fr))">${pg.map(p => `<figure><img src="${p.u}" alt=""><figcaption>${esc(p.cap)}</figcaption></figure>`).join('')}</div></section>`;
+  }).join('');
+  await Promise.all([...document.querySelectorAll('#print img')].map(im => im.decode ? im.decode().catch(() => {}) : null));
+  setTimeout(() => window.print(), 50);
+}
+async function downloadAll(v) {
+  if (!v.photoIds.length) return toast(T('noDl'));
+  toast(T('downloading', v.photoIds.length));
+  for (let i = 0; i < v.photoIds.length; i++) {
+    const p = await getPhoto(v.photoIds[i]); if (!p) continue;
+    downloadBlob(p.blob, `${safe(v.docNo || v.ladang) || 'Visit'}_${PDF_STR[settings.pdfLang].photo}_${String(i + 1).padStart(2, '0')}.jpg`);
+    await new Promise(r => setTimeout(r, 350));
+  }
+}
+/* Papan-style thumbnail group for one visit */
+function photoGroupHtml(v) {
+  const ids = v.photoIds;
+  const head = `<div class="fref">📁 ${esc(docLabel(v))} <span class="muted">· ${esc(T('nPhotos', ids.length))}${v.createdBy ? ' · ' + esc(v.createdBy) : ''}</span>
+    ${ids.length ? `<button class="btn-ghost sm" data-pg="print">🖨 ${esc(T('printNow').replace(/^🖨\s*/, ''))}</button><button class="btn-ghost sm" data-pg="dl">⬇ ${esc(T('download'))}</button>` : ''}</div>`;
+  const th = ids.map((pid, i) => { const p = photoCache[pid]; if (!p) return '';
+    return `<div class="th" data-i="${i}" title="${esc(p.caption || '')}"><img src="${urlOf(p)}" alt="" loading="lazy"><span class="num">${i + 1}</span><span class="cap">${esc(p.caption || phMeta(v, p))}</span></div>`; }).join('');
+  return head + `<div class="thumbs">${th || `<span class="muted small">${esc(T('noPhotoInFolder'))}</span>`}</div>`;
+}
+function wirePhotoGroup(box, v) {
+  box.querySelectorAll('.th[data-i]').forEach(el => el.onclick = () => openViewer(v, +el.dataset.i));
+  box.querySelector('[data-pg=print]')?.addEventListener('click', () => openPrintDlg(v));
+  box.querySelector('[data-pg=dl]')?.addEventListener('click', () => downloadAll(v));
+}
+
+function renderView() {
+  if (!cur || editMode) return;
+  const v = cur, L = PDF_STR[settings.pdfLang], firstOnly = settings.header === 'first';
+  const logo = settings.logo || DEFAULT_LOGO, title = v.title || settings.titles[0];
+  renderSheets(v, $('sheets'));
+  const ids = v.photoIds;
+  // timeline
+  const dot = { created: '', photos: 'b', pdf: 'b', print: 'b', done: 'a', synced: 'g', edited: '' };
+  const label = e => e.what === 'photos' ? T('evPhotos', e.n) : e.what === 'detached' ? T('evDetached', e.n) : T('ev' + e.what[0].toUpperCase() + e.what.slice(1));
+  $('timeline').innerHTML = (v.log || []).map(e => `<li><span class="dot ${dot[e.what] || ''}"></span><b>${esc(label(e))}</b><span>${esc(e.by || '')}</span><span class="muted small">${fmtStamp(e.t)}</span></li>`).join('');
+  // photos
+  $('vCount').textContent = ids.length ? `(${ids.length})` : '';
+  const th = $('vThumbs'); th.className = ''; th.style.marginTop = '12px';
+  th.innerHTML = photoGroupHtml(v); wirePhotoGroup(th, v);
+  if (!renderView._busy) { renderView._busy = true; renderAttach().finally(() => renderView._busy = false); }
+}
+async function markDone() {
+  if (!cur.ladang.trim()) { setMode(true); $('ladang').focus(); return toast(T('fillA')); }
+  if (!offsOf(cur).length) setOfficers(cur, [cur.createdBy || meName()].filter(Boolean));
+  assignDocNo(cur); learn(cur);
+  if (cur.status === 'draft') { cur.status = 'pending'; logEv(cur, 'done'); }
+  await saveNow(); renderView();
+  if (!settings.syncUrl) return toast(T('markedDone'), 4000);
+  syncAll(true);
+}
+$('btnEdit').onclick = () => setMode(true);
+$('btnView').onclick = async () => {
+  await flushSave();
+  if (cur.unsaved) {
+    if (!cur.ladang.trim()) { $('ladang').focus(); return toast(T('fillA')); }
+    cur.unsaved = false; cur.docNo = ''; assignDocNo(cur);
+    cur.createdAt = Date.now(); cur.log = [{ what: 'created', t: cur.createdAt, by: meName() }, ...(cur.log || []).filter(e => e.what !== 'created')];
+    cur.status = 'pending'; cur.updatedAt = Date.now();
+    await DB.put('visits', cur); editDirty = false;
+    toast(T('savedAs', cur.docNo));
+    renderDocHead(); renderTabs(); updateNet();
+  }
+  setMode(false);
+};
+async function discardVisit(v) {
+  for (const pid of v.photoIds) { await DB.del('photos', pid); delete photoCache[pid]; }
+  await DB.del('visits', v.id); visits = visits.filter(x => x !== v);
+  if (cur === v) { cur = null; saveTimer = null; }
+}
+$('btnDiscard').onclick = async () => {
+  if (!confirm(T('discardQ'))) return;
+  const k = 'doc:' + cur.id; await discardVisit(cur);
+  tabs = tabs.filter(t => t !== k); if (!tabs.length) tabs = ['list'];
+  go('list');
+};
+$('vPick').onclick = () => $('filePick').click();
+$('vCam').onclick = () => $('btnCam').click();
+function newVisitObj() {
+  return { id: uid(), docNo: '', title: settings.titles[0] || 'LAWATAN LADANG', tarikh: todayKL(), pegawai: meName(), officers: meName() ? [meName()] : [], ladang: '', note: '',
+           photoIds: [], status: 'draft', createdAt: Date.now(), createdBy: meName(), createdByU: me?.u || '', updatedAt: Date.now(), syncedAt: null,
+           log: [{ what: 'created', t: Date.now(), by: meName() }] };
+}
+async function loadVisits() { visits = (await DB.all('visits')).sort((a, b) => b.updatedAt - a.updatedAt); }
+
+function fillTitleSelect() {
+  const sel = $('title'), val = cur?.title; sel.innerHTML = '';
+  const opts = [...settings.titles]; if (val && !opts.includes(val)) opts.push(val);
+  opts.forEach(v => { const o = document.createElement('option'); o.value = o.textContent = v; sel.appendChild(o); });
+  if (val) sel.value = val;
+}
+function renderDocHead() {
+  if (!cur) return;
+  $('btnEdit').textContent = T('edit'); $('btnPdf').textContent = T('print'); $('btnPdfDl').textContent = T('pdfBtn');
+  $('btnView').textContent = cur.unsaved ? T('saveVisit') : T('doneEditing'); $('btnDiscard').textContent = T('discard');
+  $('dDocNo').textContent = docLabel(cur);
+  if (cur.unsaved) { $('dBadge').className = 'badge b-draft'; $('dBadge').textContent = T('newVisitTab'); }
+  $('dTitle').textContent = '· ' + (cur.ladang || T('noEstate'));
+  if (!cur.unsaved) { $('dBadge').className = 'badge b-' + cur.status; $('dBadge').textContent = T(cur.status); }
+  $('dCreated').textContent = `${T('cCreated')}: ${cur.createdBy || '-'} · ${fmtStamp(cur.createdAt)}`;
+}
+
+async function openVisit(id) {
+  cur = visits.find(v => v.id === id);
+  for (const pid of cur.photoIds) await getPhoto(pid);
+  cur.photoIds = cur.photoIds.filter(pid => photoCache[pid]);
+  $('tarikh').value = cur.tarikh; $('pegawai').value = ''; renderChips(); fillEstateSelect(); $('nota').value = cur.note || '';
+  $('saveState').textContent = '';
+  fillTitleSelect(); fillDatalists(); renderDocHead(); renderPhotos();
+  selPh.clear();
+  editMode = false; setMode(!cur.ladang.trim() && !cur.photoIds.length);
+  $('newPhDet').open = false; renderAttach();
+}
+async function createVisit() {
+  await flushSave();
+  const open = visits.find(v => v.unsaved && v.createdByU === (me?.u || ''));
+  if (open) return go('doc:' + open.id);
+  const v = newVisitObj(); v.unsaved = true; v.docNo = '';
+  await DB.put('visits', v);
+  visits.unshift(v);
+  await go('doc:' + v.id);
+  $('ladang').focus();
+}
+
+/* autosave */
+let saveTimer = null;
+function markChanged() {
+  if (!cur) return;
+  if (editMode) editDirty = true;
+  cur.updatedAt = Date.now();
+  if (!cur.unsaved && (cur.status === 'synced' || (cur.status === 'draft' && cur.ladang.trim()))) cur.status = 'pending';
+  $('saveState').textContent = T('saving');
+  clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 400);
+}
+async function saveNow() {
+  clearTimeout(saveTimer); saveTimer = null;
+  if (!cur) return;
+  await DB.put('visits', cur);
+  $('saveState').textContent = T('saved') + ' ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  renderDocHead(); renderTabs(); updateNet(); renderView();
+}
+async function flushSave() { if (saveTimer) await saveNow(); }
+
+$('tarikh').addEventListener('input', e => { cur.tarikh = e.target.value; markChanged(); });
+function renderChips() {
+  const box = $('offChips'); box.innerHTML = '';
+  offsOf(cur).forEach(n => {
+    const c = document.createElement('span'); c.className = 'chip';
+    const t = document.createElement('span'); t.textContent = n;
+    const x = document.createElement('button'); x.type = 'button'; x.textContent = '✕';
+    x.onclick = () => { setOfficers(cur, offsOf(cur).filter(o => o !== n)); renderChips(); markChanged(); };
+    c.append(t, x); box.appendChild(c);
+  });
+}
+function addOfficerFromInput() {
+  const inp = $('pegawai'), val = inp.value.trim().replace(/,$/, '');
+  if (!val) return;
+  setOfficers(cur, [...offsOf(cur), val]); inp.value = '';
+  renderChips(); learn(cur); markChanged();
+}
+$('pegawai').addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addOfficerFromInput(); }
+  if (e.key === 'Backspace' && !e.target.value && offsOf(cur).length) { setOfficers(cur, offsOf(cur).slice(0, -1)); renderChips(); markChanged(); }
+});
+$('pegawai').addEventListener('input', e => { if (officerNames().some(n => n.toLowerCase() === e.target.value.trim().toLowerCase())) addOfficerFromInput(); });
+$('pegawai').addEventListener('blur', addOfficerFromInput);
+$('offBox').addEventListener('click', e => { if (e.target.id === 'offBox') $('pegawai').focus(); });
+$('nota').addEventListener('input', e => { cur.note = e.target.value; markChanged(); });
+$('ladang').addEventListener('change', async e => {
+  let v = e.target.value;
+  if (v === '__new') {
+    v = (prompt(T('newEstateQ')) || '').trim().toUpperCase();
+    if (!v) { fillEstateSelect(); return; }
+    if (!estateNames().some(n => n.toUpperCase() === v)) { settings.estates.push(v); await saveSettings(); }
+    else v = estateNames().find(n => n.toUpperCase() === v);
+  }
+  cur.ladang = v; fillEstateSelect(); learn(cur); markChanged(); renderAttach(); renderDocHead(); renderTabs();
+});
+$('tarikh').addEventListener('change', () => { assignDocNo(cur); markChanged(); });
+$('title').addEventListener('change', e => { cur.title = e.target.value; markChanged(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) flushSave(); });
+window.addEventListener('pagehide', flushSave);
+
+/* photos */
+async function shrink(file, max = 1600, q = 0.85) {
+  let src;
+  try { src = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+  catch { src = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(file); }); }
+  const w = src.width, h = src.height, s = Math.min(1, max / Math.max(w, h));
+  const c = document.createElement('canvas'); c.width = Math.round(w * s); c.height = Math.round(h * s);
+  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  return new Promise(res => c.toBlob(res, 'image/jpeg', q));
+}
+async function addFiles(files, target = cur) {
+  const imgs = [...files].filter(f => f.type.startsWith('image/'));
+  if (!imgs.length) { toast(T('onlyImages')); return; }
+  toast(T('processing', imgs.length));
+  for (const f of imgs) {
+    try {
+      const blob = await shrink(f);
+      const p = { id: uid(), visitId: target.id, blob, caption: '', at: Date.now(), by: meName() };
+      await DB.put('photos', p);
+      photoCache[p.id] = p; target.photoIds.push(p.id);
+    } catch (e) { toast(T('readFail', f.name)); }
+  }
+  if (target.isFolder) { target.status = 'pending'; target.updatedAt = Date.now(); await saveFolders(); updateNet(); if (active === 'photos') renderGallery(); toast(T('added', imgs.length)); return; }
+  if (target !== cur) {
+    logEv(target, 'photos', imgs.length); target.updatedAt = Date.now(); if (target.status === 'synced') target.status = 'pending';
+    await DB.put('visits', target); if (active === 'photos') renderGallery(); toast(T('added', imgs.length)); return;
+  }
+  logEv(cur, 'photos', imgs.length);
+  markChanged(); await saveNow(); renderPhotos(); renderView();
+  toast(T('added', imgs.length));
+}
+const selPh = new Set();
+function updSel() {
+  [...selPh].forEach(id => { if (!cur.photoIds.includes(id)) selPh.delete(id); });
+  const n = selPh.size, all = cur.photoIds.length;
+  $('selBar').style.display = all ? '' : 'none';
+  $('selAll').checked = n && n === all; $('selAll').indeterminate = n > 0 && n < all;
+  $('selCount').textContent = n ? T('nSelected', n) : '';
+  $('selMove').textContent = T('moveSel', n); $('selDel').textContent = T('delSel', n);
+  $('selMove').disabled = $('selDel').disabled = !n;
+}
+$('selAll').onchange = e => { selPh.clear(); if (e.target.checked) cur.photoIds.forEach(id => selPh.add(id)); renderPhotos(); };
+$('selMove').onclick = async () => {
+  const ids = cur.photoIds.filter(id => selPh.has(id)); if (!ids.length) return;
+  if (!confirm(T('moveSelQ', ids.length))) return;
+  const refs = new Set();
+  for (const id of ids) refs.add(await movePhotoBack(cur, id, true));
+  selPh.clear(); renderPhotos();
+  toast(T('movedN', ids.length, [...refs].join(', ')), 4000);
+};
+$('selDel').onclick = async () => {
+  const ids = cur.photoIds.filter(id => selPh.has(id)); if (!ids.length) return;
+  if (!confirm(T('delSelQ', ids.length))) return;
+  for (const id of ids) { cur.photoIds = cur.photoIds.filter(x => x !== id); await DB.del('photos', id); if (urls[id]) URL.revokeObjectURL(urls[id]); delete urls[id]; delete photoCache[id]; }
+  selPh.clear(); markChanged(); renderPhotos(); renderView();
+};
+function renderPhotos() {
+  const g = $('photoGrid'); g.innerHTML = '';
+  $('emptyMsg').style.display = cur.photoIds.length ? 'none' : '';
+  $('photoCount').textContent = cur.photoIds.length ? `(${cur.photoIds.length})` : '';
+  cur.photoIds.forEach((pid, i) => {
+    const p = photoCache[pid];
+    const card = document.createElement('div'); card.className = 'ph';
+    card.innerHTML = `
+      <div class="ph-img"><label class="ph-sel"><input type="checkbox" class="selcb"></label><img alt=""></div>
+      <div class="ph-body">
+        <div class="ph-num"></div>
+        <textarea class="f-in cap" rows="3" maxlength="${CAPTION_MAX}" style="resize:vertical"></textarea>
+        <div class="ph-count"></div>
+        <div class="ph-tools">
+          <button data-a="up" title="◀">◀</button><button data-a="down" title="▶">▶</button>
+          <button data-a="dl" title="Download">💾</button><button data-a="del" class="del" title="Delete">🗑</button>
+        </div>
+        <button class="ph-mv" data-a="mv2">${esc(T('moveBack'))}</button>
+      </div>`;
+    card.querySelector('img').src = urlOf(p);
+    card.querySelector('.ph-num').textContent = `${T('photo')} ${i + 1}`;
+    const cb = card.querySelector('.selcb'); cb.checked = selPh.has(pid); card.classList.toggle('sel', cb.checked);
+    cb.onchange = () => { cb.checked ? selPh.add(pid) : selPh.delete(pid); card.classList.toggle('sel', cb.checked); updSel(); };
+    card.querySelector('.ph-mv').onclick = async () => { if (confirm(T('moveQ'))) await movePhotoBack(cur, pid); };
+    const cap = card.querySelector('.cap'), cnt = card.querySelector('.ph-count');
+    cap.placeholder = T('capPh'); cap.value = p.caption || '';
+    const upd = () => cnt.textContent = T('left', CAPTION_MAX - cap.value.length); upd();
+    cap.addEventListener('input', () => {
+      p.caption = cap.value; upd();
+      clearTimeout(p._t); p._t = setTimeout(() => DB.put('photos', { id: p.id, visitId: p.visitId, blob: p.blob, caption: p.caption, at: p.at, by: p.by }), 400);
+      markChanged();
+    });
+    card.querySelector('.ph-tools').addEventListener('click', e => {
+      const a = e.target.closest('button')?.dataset.a; if (!a) return;
+      if (a === 'up' && i > 0) { [cur.photoIds[i - 1], cur.photoIds[i]] = [cur.photoIds[i], cur.photoIds[i - 1]]; markChanged(); renderPhotos(); }
+      if (a === 'down' && i < cur.photoIds.length - 1) { [cur.photoIds[i + 1], cur.photoIds[i]] = [cur.photoIds[i], cur.photoIds[i + 1]]; markChanged(); renderPhotos(); }
+      if (a === 'dl') downloadBlob(p.blob, photoName(i));
+      if (a === 'del') removePhoto(pid);
+
+    });
+    g.appendChild(card);
+  });
+  updSel();
+}
+async function removePhoto(pid) {
+  if (!confirm(T('delPhotoQ'))) return;
+  cur.photoIds = cur.photoIds.filter(x => x !== pid);
+  await DB.del('photos', pid);
+  if (urls[pid]) URL.revokeObjectURL(urls[pid]); delete urls[pid]; delete photoCache[pid];
+  markChanged(); renderPhotos();
+}
+const photoName = i => `${safe(cur.docNo || cur.ladang) || 'Visit'}_${PDF_STR[settings.pdfLang].photo}_${String(i + 1).padStart(2, '0')}.jpg`;
+function downloadBlob(blob, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+$('btnDlAll').onclick = async () => {
+  if (!cur.photoIds.length) return toast(T('noDl'));
+  toast(T('downloading', cur.photoIds.length));
+  for (let i = 0; i < cur.photoIds.length; i++) { downloadBlob(photoCache[cur.photoIds[i]].blob, photoName(i)); await new Promise(r => setTimeout(r, 350)); }
+};
+$('btnPick').onclick = () => $('filePick').click();
+$('filePick').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
+$('fileCam').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
+const drop = $('drop');
+['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => addFiles(e.dataTransfer.files));
+document.addEventListener('paste', e => { if (!active.startsWith('doc:')) return; const f = [...(e.clipboardData?.files || [])]; if (f.length) addFiles(f); });
+
+const isTouch = matchMedia('(pointer:coarse)').matches;
+let camStream = null;
+let camTarget = null;
+$('btnCam').onclick = () => openCam(null);
+async function openCam(target) {
+  camTarget = target;
+  if (isTouch || !navigator.mediaDevices?.getUserMedia) return (target && target !== cur ? $('fCamF') : $('fileCam')).click();
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 } } });
+    $('camVideo').srcObject = camStream; $('dlgCam').showModal();
+  } catch (err) { toast(T('camFail', err.message)); }
+}
+function stopCam() { camStream?.getTracks().forEach(t => t.stop()); camStream = null; $('dlgCam').close(); }
+$('btnCamClose').onclick = stopCam;
+$('dlgCam').addEventListener('cancel', stopCam);
+$('btnSnap').onclick = () => {
+  const v = $('camVideo'), c = document.createElement('canvas');
+  c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0);
+  c.toBlob(b => { stopCam(); const file = new File([b], 'camera.jpg', { type: 'image/jpeg' }); if (camTarget?.nf) nfAdd([file]); else addFiles([file], camTarget || cur); }, 'image/jpeg', 0.9);
+};
+
+/* ---------- Visit PDF ---------- */
+const blobToDataURL = b => new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(b); });
+async function pdfImage(blob, max = 1100) {
+  const bmp = await createImageBitmap(blob);
+  const s = Math.min(1, max / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  return { data: c.toDataURL('image/jpeg', 0.8), w: c.width, h: c.height };
+}
+async function getLogo() { return settings.logo || DEFAULT_LOGO; }
+function validate() {
+  if (!cur.tarikh || !cur.ladang.trim()) { setMode(true); $('ladang').focus(); toast(T('fillA')); return false; }
+  if (!offsOf(cur).length) setOfficers(cur, [cur.createdBy || meName()].filter(Boolean));
+  if (!window.jspdf) { toast(T('noLib')); return false; }
+  return true;
+}
+async function buildPDF(v) {
+  const L = PDF_STR[settings.pdfLang];
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+  const M = 20.4, boxW = 90, boxH = 110, gap = 8, imgMax = 80;
+  const xOff = (W - (2 * boxW + gap)) / 2;
+  const firstOnly = settings.header === 'first';
+  const topWithHeader = M + 28, topNoHeader = M - 4;
+  const title = v.title || settings.titles[0] || 'LAWATAN LADANG';
+  const logo = await getLogo();
+  let logoProps = null;
+  if (logo) { try { logoProps = doc.getImageProperties(logo); } catch { logoProps = null; } }
+
+  for (let i = 0; i < v.photoIds.length; i++) {
+    const slot = i % 4, pageNo = Math.floor(i / 4) + 1;
+    if (i > 0 && slot === 0) doc.addPage();
+    const top = (!firstOnly || pageNo === 1) ? topWithHeader : topNoHeader;
+    const col = slot % 2, row = Math.floor(slot / 2);
+    const x = xOff + col * (boxW + gap), y = top + row * (boxH + gap);
+    const p = await getPhoto(v.photoIds[i]);
+    const im = await pdfImage(p.blob);
+    const ar = im.w / im.h;
+    let iw = boxW - 10, ih = iw / ar;
+    if (ih > imgMax) { ih = imgMax; iw = ih * ar; }
+    doc.addImage(im.data, 'JPEG', x + (boxW - iw) / 2, y + (imgMax - ih) / 2, iw, ih);
+    doc.setFont('Helvetica', 'bold'); doc.setFontSize(11);
+    const label = `${L.photo} ${i + 1}`;
+    doc.text(label, x + (boxW - doc.getTextWidth(label)) / 2, y + imgMax + 7);
+    if (p.caption) {
+      doc.setFont('Helvetica', 'normal'); doc.setFontSize(10.5);
+      let ln = doc.splitTextToSize(p.caption, boxW - 10);
+      if (ln.length > 3) { ln = ln.slice(0, 3); ln[2] = ln[2].replace(/.{0,3}$/, '...'); }
+      doc.text(ln, x + 5, y + imgMax + 13);
+    }
+  }
+  const total = doc.getNumberOfPages();
+  for (let pg = 1; pg <= total; pg++) {
+    doc.setPage(pg);
+    if (pg === 1 || !firstOnly) {
+      if (logo && logoProps) {
+        const s = Math.min(25 / logoProps.width, 25 / logoProps.height);
+        doc.addImage(logo, logoProps.fileType || 'JPEG', M, M - 10, logoProps.width * s, logoProps.height * s);
+      }
+      doc.setFont('Helvetica', 'normal'); doc.setFontSize(7);
+      doc.text(settings.rev, W - M - doc.getTextWidth(settings.rev), M - 5);
+      if (v.docNo) { const dn = `No: ${v.docNo}`; doc.setFontSize(9); doc.text(dn, W - M - doc.getTextWidth(dn), M + 22); }
+      doc.setFont('Helvetica', 'bold'); doc.setFontSize(14);
+      doc.text(title, (W - doc.getTextWidth(title)) / 2, M);
+      doc.setFont('Helvetica', 'normal'); doc.setFontSize(12);
+      const offTxt = offsOf(v).join(', ');
+      let fs = 12; doc.setFontSize(fs);
+      while (doc.getTextWidth(offTxt) > W - 2 * M - 56 && fs > 7) doc.setFontSize(--fs);
+      doc.text(offTxt, (W - doc.getTextWidth(offTxt)) / 2, M + 8);
+      doc.setFontSize(12);
+      doc.text(`${L.loc}: ${v.ladang}`, M, M + 16);
+      doc.text(`${L.date}: ${fmtDate(v.tarikh)}`, M, M + 22);
+    }
+    doc.setFont('Helvetica', 'normal'); doc.setFontSize(8); doc.setDrawColor(150);
+    doc.line(M, H - 12, W - M, H - 12);
+    const ft = L.page(pg, total);
+    doc.text(ft, (W - doc.getTextWidth(ft)) / 2, H - 6);
+    if (firstOnly && pg > 1) {
+      doc.setFontSize(7);
+      doc.text(`${v.docNo ? v.docNo + ' · ' : ''}${title} · ${v.ladang} · ${fmtDate(v.tarikh)}`, M, H - 14);
+    }
+  }
+  return doc;
+}
+const pdfName = v => `${safe(v.docNo || v.title)}_${safe(v.ladang)}_${fmtDate(v.tarikh).replace(/-/g, '_')}.pdf`;
+async function printVisit(v) {
+  if (!v.ladang.trim()) { if (v === cur) { setMode(true); $('ladang').focus(); } return toast(T('fillA')); }
+  for (const pid of v.photoIds) await getPhoto(pid);
+  renderSheets(v, $('print'));
+  await Promise.all([...document.querySelectorAll('#print img')].map(im => im.decode ? im.decode().catch(() => {}) : null));
+  logEv(v, 'print'); if (v === cur) await saveNow(); else await DB.put('visits', v);
+  setTimeout(() => window.print(), 50);
+}
+$('btnPdf').onclick = async () => { await flushSave(); assignDocNo(cur); await printVisit(cur); };
+$('btnPdfDl').onclick = async () => {
+  await flushSave();
+  if (!validate()) return;
+  pvVisit = cur; const doc = await makePdf(); if (doc) { doc.save(pdfName(cur)); toast(T('pdfOk')); }
+};
+let pvVisit = null;
+async function openPreview(v) {
+  for (const pid of v.photoIds) await getPhoto(pid);
+  pvVisit = v;
+  $('pvTitle').textContent = `${docLabel(v)} · ${v.ladang || T('noEstate')} · ${fmtDate(v.tarikh)}`;
+  $('pvPrint').textContent = T('printNow');
+  $('pvOpen').textContent = T('openVisit');
+  $('pvOpen').style.display = active === 'doc:' + v.id ? 'none' : '';
+  renderSheets(v, $('pvBody'));
+  if (!$('dlgPrint').open) $('dlgPrint').showModal();
+  $('pvBody').scrollTop = 0;
+}
+$('pvOpen').onclick = () => { $('dlgPrint').close(); go('doc:' + pvVisit.id); };
+$('dlgPrint').addEventListener('click', e => { if (e.target === $('dlgPrint')) $('dlgPrint').close(); });
+$('pvClose').onclick = () => $('dlgPrint').close();
+async function makePdf() {
+  if (!window.jspdf) { toast(T('noLib')); return null; }
+  const v = pvVisit;
+  if (!v.ladang.trim()) { toast(T('fillA')); return null; }
+  if (!offsOf(v).length) setOfficers(v, [v.createdBy || meName()].filter(Boolean));
+  toast(T('makingPdf'));
+  try { const doc = await buildPDF(v); logEv(v, 'pdf'); if (v === cur) await saveNow(); else await DB.put('visits', v); return doc; }
+  catch (e) { toast(T('pdfFail', e.message)); return null; }
+}
+$('pvDl').onclick = async () => { const doc = await makePdf(); if (doc) { doc.save(pdfName(pvVisit)); toast(T('pdfOk')); } };
+$('pvPrint').onclick = async () => {
+  const v = pvVisit;
+  if (!v.ladang.trim()) return toast(T('fillA'));
+  renderSheets(v, $('print'));
+  await Promise.all([...document.querySelectorAll('#print img')].map(im => im.decode ? im.decode().catch(() => {}) : null));
+  logEv(v, 'pdf'); if (v === cur) await saveNow(); else await DB.put('visits', v);
+  $('dlgPrint').close();
+  setTimeout(() => window.print(), 50);
+};
+$('btnDelVisit').onclick = async () => {
+  if (!confirm(T('delVisitQ', `${docLabel(cur)} · ${cur.ladang || T('noEstate')}`))) return;
+  for (const pid of cur.photoIds) { await DB.del('photos', pid); delete photoCache[pid]; }
+  await DB.del('visits', cur.id);
+  visits = visits.filter(v => v.id !== cur.id);
+  const k = 'doc:' + cur.id; cur = null; saveTimer = null;
+  tabs = tabs.filter(t => t !== k); if (!tabs.length) tabs = [typeof isPhone !== 'undefined' && isPhone ? 'photos' : 'home'];
+  go('list'); toast(T('deleted'));
+};
+
+/* ---------- Google Drive sync ---------- */
+async function post(body) {
+  const r = await fetch(settings.syncUrl, { method: 'POST', body: JSON.stringify({ key: settings.syncKey, ...body }) });
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || 'Server error');
+  return j;
+}
+const b64 = async blob => (await blobToDataURL(blob)).split(',')[1];
+const textB64 = s => btoa(unescape(encodeURIComponent(s)));
+function queueTrash(id) { (settings.trashQ ||= []).push(id); saveSettings(); }
+async function syncFolder(f) {
+  const L = PDF_STR[settings.pdfLang];
+  const base = { visitId: f.id, folderName: `WAITING ${f.ladang} ${f.docNo}`.replace(/\//g, '-') };
+  const keep = [];
+  const info = `Photo folder (waiting to attach)\nRef: ${f.docNo}\n${L.loc}: ${f.ladang}\nNote: ${f.note || '-'}\nBy: ${f.createdBy || '-'} (${fmtStamp(f.createdAt)})\n`;
+  await post({ ...base, action: 'file', name: 'info.txt', mime: 'text/plain', data: textB64(info) }); keep.push('info.txt');
+  for (let i = 0; i < f.photoIds.length; i++) {
+    const p = await getPhoto(f.photoIds[i]); if (!p) continue;
+    const name = `${L.photo}_${String(i + 1).padStart(2, '0')}.jpg`;
+    await post({ ...base, action: 'file', name, mime: 'image/jpeg', data: await b64(p.blob) }); keep.push(name);
+  }
+  await post({ ...base, action: 'cleanup', keep });
+}
+async function syncVisit(v) {
+  const L = PDF_STR[settings.pdfLang];
+  const folderName = `${v.tarikh} ${v.docNo || ''} ${v.ladang || 'Estate'} - ${v.pegawai || ''} (${v.id.slice(-4)})`.replace(/\s+/g, ' ');
+  const base = { visitId: v.id, folderName };
+  const keep = [], photos = [];
+  for (const pid of v.photoIds) photos.push(await getPhoto(pid));
+  let info = `${v.title}\n${settings.rev}\nNo: ${v.docNo || '-'}\n\n${L.date}: ${fmtDate(v.tarikh)}\nOfficer/Pegawai: ${v.pegawai}\n${L.loc}: ${v.ladang}\n${v.note ? 'Note: ' + v.note + '\n' : ''}Created by: ${v.createdBy || '-'} (${fmtStamp(v.createdAt)})\n\n`;
+  photos.forEach((p, i) => info += `${L.photo} ${i + 1}: ${p.caption || '-'}\n`);
+  await post({ ...base, action: 'file', name: 'info.txt', mime: 'text/plain', data: textB64(info) }); keep.push('info.txt');
+  for (let i = 0; i < photos.length; i++) {
+    const name = `${L.photo}_${String(i + 1).padStart(2, '0')}.jpg`;
+    await post({ ...base, action: 'file', name, mime: 'image/jpeg', data: await b64(photos[i].blob) }); keep.push(name);
+  }
+  if (window.jspdf && v.ladang && v.pegawai) {
+    const doc = await buildPDF(v), name = pdfName(v);
+    await post({ ...base, action: 'file', name, mime: 'application/pdf', data: await b64(doc.output('blob')) }); keep.push(name);
+  }
+  await post({ ...base, action: 'cleanup', keep });
+}
+async function syncAll(manual = false) {
+  if (syncing) return;
+  if (!settings.syncUrl) { if (manual) toast(T('noSyncSet')); return; }
+  if (!navigator.onLine) { if (manual) toast(T('noNet')); return; }
+  await flushSave();
+  const ready = x => x.status === 'pending' && (manual || Date.now() - (x.updatedAt || 0) > 120000);   // wait 2 min after the last edit
+  const todo = [...savedV().filter(ready), ...folders.filter(ready)], trash = [...(settings.trashQ || [])];
+  if (!todo.length && !trash.length) { if (manual) toast(T('allSynced')); return; }
+  syncing = true; updateNet();
+  let ok = 0;
+  try { for (const id of trash) { await post({ action: 'trash', visitId: id }); settings.trashQ = settings.trashQ.filter(x => x !== id); } await saveSettings(); }
+  catch (e) { syncing = false; updateNet(); toast(T('syncFail', e.message), 4000); return; }
+  for (const v of todo) {
+    if (v.isFolder) {
+      const stamp = v.updatedAt;
+      try { await syncFolder(v); if (v.updatedAt === stamp && folders.includes(v)) { v.status = 'synced'; v.syncedAt = Date.now(); await saveFolders(); } ok++; }
+      catch (e) { toast(T('syncFail', e.message), 4000); break; }
+      continue;
+    }
+    const stamp = v.updatedAt;
+    try {
+      await syncVisit(v);
+      if (v.updatedAt === stamp) { v.status = 'synced'; v.syncedAt = Date.now(); logEv(v, 'synced'); await DB.put('visits', v); }
+      ok++;
+    } catch (e) { toast(T('syncFail', e.message), 4000); break; }
+  }
+  syncing = false; updateNet(); refreshActive();
+  if (ok) toast(T('syncOk', ok));
+}
+function updateNet() {
+  const p = $('netPill'), pend = savedV().filter(v => v.status === 'pending').length + folders.filter(f => f.status === 'pending').length;
+  const w = pend ? ' · ' + T('waiting', pend) : '';
+  if (!navigator.onLine) { p.className = 'pill off'; p.textContent = `● ${T('offline')}${w}`; }
+  else if (syncing) { p.className = 'pill'; p.textContent = T('syncingNow'); }
+  else { p.className = 'pill'; p.textContent = `● ${T('online')}${w}`; }
+  const np = $('navPending'), nd = savedV().filter(v => v.status !== 'synced').length;
+  np.style.display = nd ? '' : 'none'; np.textContent = nd;
+}
+function refreshActive() {
+  if (active === 'home') renderHome(); else if (active === 'list') renderList();
+  else if (active.startsWith('doc:')) { renderDocHead(); renderView(); }
+  renderTabs();
+}
+window.addEventListener('online', () => { updateNet(); syncAll(); });
+window.addEventListener('offline', updateNet);
+let instEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); instEvt = e; $('tbInstall').style.display = ''; });
+window.addEventListener('appinstalled', () => { instEvt = null; $('tbInstall').style.display = 'none'; toast(T('installed')); });
+$('tbInstall').onclick = async () => { if (!instEvt) return; instEvt.prompt(); await instEvt.userChoice; instEvt = null; $('tbInstall').style.display = 'none'; };
+setInterval(() => { updateNet(); syncAll(); }, 60000);
+
+/* ---------- Settings page ---------- */
+function applyBrand() {
+  $('appTitle').textContent = `${settings.company ? settings.company + ' — ' : ''}${settings.lang === 'en' ? 'SITE VISIT' : 'LAWATAN LADANG'}`;
+  document.title = settings.lang === 'en' ? 'Site Visit' : 'Lawatan Ladang';
+  const img = $('logoImg'); img.parentNode.style.display = ''; img.src = settings.logo || DEFAULT_LOGO;
+  const pv = $('setLogoPrev'); if (settings.logo) { pv.src = settings.logo; pv.style.display = ''; } else pv.style.display = 'none';
+}
+function loadSettingsForm() {
+  $('sCompany').value = settings.company; $('sRemember').value = settings.allowRemember;
+  titEdit = [...settings.titles]; $('sRev').value = settings.rev; showSetTab(setTab);
+  $('sHeader').value = settings.header; $('sPdfLang').value = settings.pdfLang;
+  estEdit = settings.estates.map(estName);
+  renderListEditors(); renderUsers();
+  $('syncUrl').value = settings.syncUrl; $('syncKey').value = settings.syncKey;
+  applyBrand();
+}
+$('btnLogo').onclick = () => $('logoPick').click();
+$('logoPick').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  settings.logo = await blobToDataURL(await shrink(f, 400, 0.92)); await saveSettings(); applyBrand(); toast(T('logoSaved'));
+};
+$('btnLogoReset').onclick = async () => { settings.logo = null; await saveSettings(); applyBrand(); toast(T('logoReset')); };
+$('btnSaveSettings').onclick = async () => {
+  settings.company = $('sCompany').value.trim(); settings.allowRemember = $('sRemember').value;
+  readListEditors();
+  const t = [...new Set(titEdit.filter(Boolean))]; settings.titles = t.length ? t : ['LAWATAN LADANG'];
+  settings.rev = $('sRev').value.trim(); settings.header = $('sHeader').value; settings.pdfLang = $('sPdfLang').value;
+  readListEditors();
+  const seen = new Set();
+  settings.estates = estEdit.filter(e => e && !seen.has(e.toLowerCase()) && seen.add(e.toLowerCase()));
+  settings.syncUrl = $('syncUrl').value.trim(); settings.syncKey = $('syncKey').value.trim();
+  await saveSettings(); applyBrand(); fillDatalists(); toast(T('settingsSaved')); syncAll();
+};
+$('btnTestSync').onclick = async () => {
+  const old = { url: settings.syncUrl, key: settings.syncKey };
+  settings.syncUrl = $('syncUrl').value.trim(); settings.syncKey = $('syncKey').value.trim();
+  try { await post({ action: 'ping' }); toast(T('connOk')); } catch (e) { toast(T('connFail', e.message), 4000); }
+  settings.syncUrl = old.url; settings.syncKey = old.key;
+};
+
+/* ---------- Language ---------- */
+function applyLang() {
+  document.documentElement.lang = settings.lang;
+  document.querySelectorAll('[data-t]').forEach(el => el.textContent = T(el.dataset.t));
+  document.querySelectorAll('[data-tp]').forEach(el => el.placeholder = T(el.dataset.tp));
+  document.querySelectorAll('.lang button').forEach(b => b.classList.toggle('on', b.dataset.lang === settings.lang));
+  applyBrand(); updateNet(); showMe();
+  if (cur && active.startsWith('doc:')) { renderDocHead(); renderPhotos(); }
+  refreshActive();
+  if (active === 'photos') renderGallery();
+  if (active === 'report') renderReport();
+}
+document.querySelectorAll('.lang button').forEach(b => b.onclick = async () => {
+  settings.lang = b.dataset.lang; await saveSettings(); applyLang();
+  if (!$('login').hidden) { const setup = !settings.users.length;
+    $('loginSub').textContent = setup ? T('firstSetup') : T('pleaseLogin'); $('liBtn').textContent = setup ? T('createAdmin') : T('login'); $('liErr').textContent = ''; }
+});
+
+/* ---------- List editors (estates / officers) ---------- */
+let estEdit = [], titEdit = [];
+function renderListEditors() {
+  const mk = (box, arr, withCode, onChange) => {
+    box.innerHTML = '';
+    arr.forEach((it, i) => {
+      const row = document.createElement('div'); row.className = 'le-row';
+      row.innerHTML = `<span class="no">${i + 1}.</span><input class="f-in nm"> ${withCode ? '<input class="f-in code">' : ''}
+        <button type="button" data-a="up" title="${T('up')}">▲</button><button type="button" data-a="down" title="${T('down')}">▼</button><button type="button" class="del" data-a="del">✕</button>`;
+      const nm = row.querySelector('.nm'); nm.value = withCode ? it.name : it;
+      nm.oninput = () => { if (withCode) it.name = nm.value; else arr[i] = nm.value; };
+      if (withCode) { const c = row.querySelector('.code'); c.value = it.code; c.oninput = () => it.code = c.value; c.placeholder = T('codePh'); }
+      row.onclick = e => {
+        const a = e.target.dataset.a; if (!a) return;
+        if (a === 'up' && i > 0) [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
+        if (a === 'down' && i < arr.length - 1) [arr[i + 1], arr[i]] = [arr[i], arr[i + 1]];
+        if (a === 'del') arr.splice(i, 1);
+        onChange();
+      };
+      box.appendChild(row);
+    });
+  };
+  mk($('leTit'), titEdit, false, renderListEditors);
+  const first = $('leTit').querySelector('.le-row .no');
+  if (first) { const b = document.createElement('span'); b.className = 'def'; b.textContent = T('default'); first.parentNode.insertBefore(b, first.nextSibling.nextSibling); }
+  mk($('leEst'), estEdit, false, renderListEditors);
+}
+function readListEditors() { estEdit = estEdit.map(e => e.trim().toUpperCase()); titEdit = titEdit.map(e => e.trim().toUpperCase()); }
+$('addTit').onclick = () => {
+  const n = $('addTitName').value.trim().toUpperCase(); if (!n) return;
+  titEdit.push(n); $('addTitName').value = ''; renderListEditors(); $('addTitName').focus();
+};
+$('addTitName').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('addTit').click(); } });
+let setTab = 'general';
+function showSetTab(k) {
+  setTab = k;
+  document.querySelectorAll('#stabs button').forEach(b => b.classList.toggle('on', b.dataset.st === k));
+  document.querySelectorAll('.spane').forEach(p => p.classList.toggle('on', p.dataset.sp === k));
+}
+document.querySelectorAll('#stabs button').forEach(b => b.onclick = () => showSetTab(b.dataset.st));
+$('addEst').onclick = () => {
+  const n = $('addEstName').value.trim().toUpperCase(); if (!n) return;
+  estEdit.push(n); $('addEstName').value = ''; renderListEditors(); $('addEstName').focus();
+};
+[['addEstName', 'addEst']].forEach(([i, b]) => $(i).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $(b).click(); } }));
+
+/* ---------- Users & login (username + password) ---------- */
+let me = null;   // { u, name, role }
+const meName = () => me?.name || '';
+async function hashPw(pw, salt) {
+  const data = new TextEncoder().encode(salt + ':' + pw);
+  if (crypto.subtle) {
+    const buf = await crypto.subtle.digest('SHA-256', data);
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  let h = 5381; for (const b of data) h = ((h << 5) + h + b) >>> 0; return 'x' + h.toString(16);   // fallback
+}
+const newSalt = () => [...crypto.getRandomValues(new Uint8Array(8))].map(b => b.toString(16).padStart(2, '0')).join('');
+const findUser = u => settings.users.find(x => x.u === u.trim().toLowerCase());
+
+function renderUsers() {
+  const t = $('tblUsers');
+  t.innerHTML = `<thead><tr><th>${T('username')}</th><th>${T('fullName')}</th><th>${T('docCode')}</th><th>${T('role')}</th><th></th></tr></thead>`;
+  const tb = document.createElement('tbody');
+  settings.users.forEach(u => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><b>${esc(u.u)}</b></td><td>${esc(u.name)}</td>
+      <td><input class="f-in ucode" maxlength="6" style="width:90px;text-transform:uppercase;padding:6px 8px"> <span class="muted small">${esc((u.code || nameCode(u.name)).toUpperCase())}-1/${+todayKL().slice(5, 7)}</span></td>
+      <td>${T(u.role === 'admin' ? 'roleAdmin' : 'roleStaff')}</td>
+      <td style="text-align:right;white-space:nowrap"><button class="btn-ghost" data-a="reset">🔑 ${T('resetPass')}</button> <button class="btn-danger" data-a="del">${T('delUser')}</button></td>`;
+    const ci = tr.querySelector('.ucode'); ci.value = u.code || nameCode(u.name);
+    ci.onchange = async () => { u.code = ci.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || nameCode(u.name); await saveSettings(); renderUsers(); };
+    tr.onclick = async e => {
+      const a = e.target.closest('button')?.dataset.a; if (!a) return;
+      if (a === 'reset') {
+        const pw = prompt(`${u.u} — ${T('newPassQ')}`); if (pw === null) return;
+        if (pw.length < 4) return toast(T('passShort'));
+        u.salt = newSalt(); u.hash = await hashPw(pw, u.salt); await saveSettings(); toast(T('passChanged'));
+      }
+      if (a === 'del') {
+        if (u.role === 'admin' && settings.users.filter(x => x.role === 'admin').length < 2) return toast(T('lastAdmin'));
+        if (!confirm(T('delUserQ', u.u))) return;
+        settings.users = settings.users.filter(x => x !== u); await saveSettings(); renderUsers(); fillDatalists();
+      }
+    };
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+}
+$('nuAdd').onclick = async () => {
+  const u = $('nuUser').value.trim().toLowerCase(), name = $('nuName').value.trim().toUpperCase(), pw = $('nuPass').value;
+  if (!u || !name || !pw) return toast(T('fillAll'));
+  if (pw.length < 4) return toast(T('passShort'));
+  if (findUser(u)) return toast(T('userExists'));
+  const salt = newSalt();
+  const code = $('nuCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || nameCode(name);
+  settings.users.push({ u, name, code, role: $('nuRole').value, salt, hash: await hashPw(pw, salt) });
+  await saveSettings(); renderUsers(); fillDatalists();
+  $('nuUser').value = $('nuName').value = $('nuPass').value = $('nuCode').value = ''; toast(T('userAdded'));
+};
+
+let loginResolve = null;
+function openLogin() {
+  const setup = !settings.users.length;
+  $('loginCompany').textContent = settings.company || '';
+  const lg = $('loginLogo'); lg.style.display = ''; lg.src = settings.logo || DEFAULT_LOGO;
+  $('loginSub').textContent = setup ? T('firstSetup') : T('pleaseLogin');
+  $('liNameRow').style.display = setup ? '' : 'none';
+  $('liPass2Row').style.display = setup ? '' : 'none';
+  $('liRemRow').style.display = settings.allowRemember === 'yes' ? '' : 'none';
+  $('liPass').autocomplete = setup ? 'new-password' : 'current-password';
+  $('liBtn').textContent = setup ? T('createAdmin') : T('login');
+  $('liErr').textContent = ''; $('liPass').value = ''; $('liPass2').value = '';
+  $('login').hidden = false; $('liUser').focus();
+  return new Promise(res => loginResolve = res);
+}
+$('loginForm').onsubmit = async e => {
+  e.preventDefault();
+  const u = $('liUser').value.trim().toLowerCase(), pw = $('liPass').value, err = $('liErr');
+  if (!settings.users.length) {
+    const name = $('liName').value.trim().toUpperCase();
+    if (!u || !name || !pw) return err.textContent = T('fillAll');
+    if (pw.length < 4) return err.textContent = T('passShort');
+    if (pw !== $('liPass2').value) return err.textContent = T('passMismatch');
+    const salt = newSalt();
+    settings.users.push({ u, name, code: nameCode(name), role: 'admin', salt, hash: await hashPw(pw, salt) });
+    await saveSettings();
+  }
+  const user = findUser(u);
+  if (!user || await hashPw(pw, user.salt) !== user.hash) { err.textContent = T('badLogin'); $('liPass').select(); return; }
+  me = { u: user.u, name: user.name, role: user.role };
+  sessionStorage.setItem('ll.session', user.u);
+  if ($('liRem').checked && settings.allowRemember === 'yes') localStorage.setItem('ll.session', user.u); else localStorage.removeItem('ll.session');
+  $('login').hidden = true; afterLogin(); toast(T('hello', user.name));
+  loginResolve?.(); loginResolve = null;
+};
+const isPhone = matchMedia('(pointer:coarse) and (max-width: 900px)').matches;
+const PHONE_OK = k => ['list', 'photos', 'newfolder'].includes(k) || k.startsWith('doc:');
+function applyPhone() {
+  if (!isPhone) return;
+  document.body.classList.add('phone');
+  ['home', 'report', 'settings'].forEach(k => { const a = document.querySelector(`[data-nav=${k}]`); if (a) a.style.display = 'none'; });
+  document.querySelector('.side [data-t=navSystem]').style.display = 'none';
+  tabs = tabs.filter(PHONE_OK); if (!tabs.length) tabs = ['photos', 'list'];
+  if (!PHONE_OK(active)) active = 'photos';
+  if (!$('phoneNote')) { const n = document.createElement('p'); n.id = 'phoneNote'; n.className = 'muted small'; n.style.margin = '0 0 10px'; $('pg-photos').prepend(n); }
+  $('phoneNote').textContent = T('phoneNote');
+}
+function afterLogin() {
+  $('userName').textContent = me.u; $('tbRole').textContent = T(me.role === 'admin' ? 'roleAdmin' : 'roleStaff').toUpperCase();
+  $('mName').textContent = meName(); $('mUser').textContent = `${me.u} · ${T(me.role === 'admin' ? 'roleAdmin' : 'roleStaff')}`;
+  document.querySelector('[data-nav=settings]').style.display = me.role === 'admin' ? '' : 'none';
+  document.querySelector('.side [data-t=navSystem]').style.display = me.role === 'admin' ? '' : 'none';
+  if (me.role !== 'admin' && tabs.includes('settings')) { tabs = tabs.filter(t => t !== 'settings'); if (active === 'settings') go('home'); else renderTabs(); }
+  fillDatalists();
+}
+async function startLogin() {
+  const sess = sessionStorage.getItem('ll.session') || (settings.allowRemember === 'yes' ? localStorage.getItem('ll.session') : null);
+  const user = sess && findUser(sess);
+  if (user) { me = { u: user.u, name: user.name, role: user.role }; afterLogin(); return; }
+  await openLogin();
+}
+function showMe() { if (me) { $('userName').textContent = me.u; $('tbRole').textContent = T(me.role === 'admin' ? 'roleAdmin' : 'roleStaff').toUpperCase(); } }
+$('tbPass').onclick = () => $('mPass').click();
+$('tbLogout').onclick = () => $('mLogout').click();
+document.addEventListener('click', e => { if (!e.target.closest('#userMenu')) $('userMenu').classList.remove('open'); });
+$('mLogout').onclick = async () => {
+  $('userMenu').classList.remove('open'); await flushSave();
+  sessionStorage.removeItem('ll.session'); localStorage.removeItem('ll.session'); me = null;
+  await openLogin();
+  if (active === 'settings' && me.role !== 'admin') go('home');
+};
+$('mPass').onclick = async () => {
+  $('userMenu').classList.remove('open');
+  const user = findUser(me.u); const pw = prompt(T('newPassQ')); if (pw === null) return;
+  if (pw.length < 4) return toast(T('passShort'));
+  user.salt = newSalt(); user.hash = await hashPw(pw, user.salt); await saveSettings(); toast(T('passChanged'));
+};
+
+/* ---------- Start ---------- */
+(async function init() {
+  await DB.open();
+  settings = { ...settings, ...(await DB.get('settings', 'main') || {}) };
+  folders = (await DB.get('settings', 'folders')) || [];
+  await loadVisits();
+  // upgrade older records
+  for (const v of [...visits].reverse()) {
+    let ch = false;
+    if (!v.createdAt) { v.createdAt = v.updatedAt || Date.now(); ch = true; }
+    if (v.createdBy === undefined) { v.createdBy = v.pegawai || ''; ch = true; }
+    if (!v.officers) { setOfficers(v, offsOf(v)); ch = true; }
+    if (!v.officers.length && v.createdBy) { setOfficers(v, [v.createdBy]); ch = true; }
+    if (!v.log) { v.log = [{ what: 'created', t: v.createdAt, by: v.createdBy }]; if (v.photoIds.length) v.log.push({ what: 'photos', t: v.createdAt, by: v.createdBy, n: v.photoIds.length }); if (v.syncedAt) v.log.push({ what: 'synced', t: v.syncedAt, by: v.createdBy }); ch = true; }
+    if (!v.title) { v.title = settings.titles[0]; ch = true; }
+    if (settings.docScheme !== 'user') { v.docNo = ''; ch = true; }
+    if (!v.docNo) { assignDocNo(v); ch = true; }
+    if (ch) await DB.put('visits', v);
+    learn(v);
+  }
+  if (settings.docScheme !== 'user') { settings.docScheme = 'user'; await saveSettings(); }
+  for (const v of visits) if (v.status === 'draft' && v.ladang && v.ladang.trim()) { v.status = 'pending'; await DB.put('visits', v); }
+  for (const v of visits) if (!v.unsaved && (!v.ladang || !v.ladang.trim())) { v.unsaved = true; v.docNo = ''; await DB.put('visits', v); }
+  try { const s = JSON.parse(localStorage.getItem('ll.tabs')); if (s?.tabs?.length) { tabs = s.tabs.filter(k => !k.startsWith('doc:') || visits.some(v => v.id === k.slice(4))); active = s.active; } } catch {}
+  if (!tabs.length) tabs = [typeof isPhone !== 'undefined' && isPhone ? 'photos' : 'home'];
+  if (!tabs.includes(active)) active = tabs[0];
+  applyLang();
+  await startLogin();
+  applyPhone();
+  await go(tabs.includes(active) ? active : (isPhone ? 'photos' : 'home'));
+  updateNet();
+  navigator.storage?.persist?.();
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+  syncAll();
+})();
+</script>
+</body>
+</html>
