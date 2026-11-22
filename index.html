@@ -149,8 +149,8 @@
   .sh-box{display:flex;flex-direction:column;min-height:0}
   .sh-img{flex:0 0 38cqw;position:relative}
   .sh-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-  .sh-lbl{text-align:center;font-weight:700;font-size:2.6cqw;margin-top:1.4cqw}
-  .sh-cap{font-size:2.4cqw;margin-top:.8cqw;padding:0 2cqw;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+  .sh-lbl{text-align:center;font-weight:700;font-size:2.4cqw;margin-top:1.4cqw}
+  .sh-cap{font-size:2.4cqw;margin-top:.6cqw;padding:0 2cqw;text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
   .sh-foot{position:absolute;left:9.7cqw;right:9.7cqw;bottom:2.4cqw;border-top:1px solid #999;text-align:center;font-size:1.9cqw;padding-top:1.4cqw}
   .sidecol{display:flex;flex-direction:column;gap:14px}
   .next{border-color:#fcd9a8;background:#fffaf2}
@@ -1707,7 +1707,14 @@ $('btnView').onclick = async () => {
   setMode(false);
 };
 async function discardVisit(v) {
-  for (const pid of v.photoIds) { await DB.del('photos', pid); delete photoCache[pid]; }
+  const back = new Set();     // attached photo folders go back to the Photos menu instead of being deleted
+  for (const a of v.attached || []) {
+    const ids = a.photoIds.filter(id => v.photoIds.includes(id)); if (!ids.length) continue;
+    for (const pid of ids) { const p = await getPhoto(pid); if (!p) continue; p.visitId = a.id; if (a.note && p.caption === a.note) p.caption = ''; await DB.put('photos', { id: p.id, visitId: a.id, blob: p.blob, caption: p.caption, at: p.at, by: p.by }); back.add(pid); }
+    folders.push({ id: a.id, isFolder: true, docNo: a.docNo, note: a.note, ladang: a.ladang, tarikh: a.tarikh, title: '', photoIds: ids, createdBy: a.createdBy, createdAt: a.createdAt, status: 'pending', updatedAt: Date.now() });
+  }
+  if (back.size) await saveFolders();
+  for (const pid of v.photoIds) { if (back.has(pid)) continue; await DB.del('photos', pid); delete photoCache[pid]; }
   await DB.del('visits', v.id); visits = visits.filter(x => x !== v);
   if (cur === v) { cur = null; saveTimer = null; }
 }
@@ -2014,14 +2021,14 @@ async function buildPDF(v) {
     let iw = boxW - 10, ih = iw / ar;
     if (ih > imgMax) { ih = imgMax; iw = ih * ar; }
     doc.addImage(im.data, 'JPEG', x + (boxW - iw) / 2, y + (imgMax - ih) / 2, iw, ih);
-    doc.setFont('Helvetica', 'bold'); doc.setFontSize(11);
+    doc.setFont('Helvetica', 'bold'); doc.setFontSize(10.5);      // same size as the remark
     const label = `${L.photo} ${i + 1}`;
     doc.text(label, x + (boxW - doc.getTextWidth(label)) / 2, y + imgMax + 7);
     if (p.caption) {
       doc.setFont('Helvetica', 'normal'); doc.setFontSize(10.5);
       let ln = doc.splitTextToSize(p.caption, boxW - 10);
       if (ln.length > 3) { ln = ln.slice(0, 3); ln[2] = ln[2].replace(/.{0,3}$/, '...'); }
-      doc.text(ln, x + 5, y + imgMax + 13);
+      ln.forEach((t, k) => doc.text(t, x + (boxW - doc.getTextWidth(t)) / 2, y + imgMax + 13 + k * 4.6));   // centred under the photo
     }
   }
   const total = doc.getNumberOfPages();
@@ -2629,7 +2636,8 @@ async function localDocs() {
   for (const f of folders) out.push({ kind: 'folder', id: f.id, data: clean(f), at: f.updatedAt || 0 });
   for (const u of settings.users) out.push({ kind: 'user', id: u.u, data: userDoc(u), extra: u._pw ? { salt: u.salt, hash: u.hash } : null, ref: u });
   if (me?.role === 'admin') out.push({ kind: 'settings', id: 'main', data: sharedSettings() });
-  for (const p of await DB.all('photos')) if (!unsavedIds.has(p.visitId)) out.push({ kind: 'photo', id: p.id, data: photoDoc(p), rec: p });
+  out.held = new Set();          // photos in a new visit that is not saved yet: not sent, but NOT deleted either
+  for (const p of await DB.all('photos')) { if (unsavedIds.has(p.visitId)) out.held.add('photo:' + p.id); else out.push({ kind: 'photo', id: p.id, data: photoDoc(p), rec: p }); }
   return out;
 }
 async function fetchDrivePhoto(pid) {
@@ -2655,7 +2663,7 @@ async function cloudPush(token) {
     send.push({ kind: d.kind, id: d.id, data: d.extra ? { ...d.data, ...d.extra } : d.data, updated_at: d.at || Date.now(), deleted: false, _key: key, _sig: sig(d.data), _ref: d.ref });
   }
   for (const key of Object.keys(cloud.pushed)) {        // deleted on this device
-    if (have.has(key)) continue;
+    if (have.has(key) || docs.held.has(key)) continue;
     const [kind, ...rest] = key.split(':'), id = rest.join(':');
     if (kind === 'settings') continue;
     send.push({ kind, id, data: {}, updated_at: Date.now(), deleted: true, _key: key, _sig: null });
@@ -2703,6 +2711,7 @@ async function cloudPull(token) {
       cloud.pushed[key] = sig(clean(d.data)); changed = true;
     } else if (d.kind === 'photo') {
       const p = await DB.get('photos', d.id);
+      if (d.deleted && p && visits.some(v => v.unsaved && v.id === p.visitId)) { delete cloud.pushed[key]; continue; }
       if (d.deleted) { if (p) { await DB.del('photos', d.id); delete photoCache[d.id]; if (urls[d.id]) { URL.revokeObjectURL(urls[d.id]); delete urls[d.id]; } changed = true; } delete cloud.pushed[key]; continue; }
       const mem = photoCache[d.id] || p;        // what is on screen (a caption may be typed but not stored yet)
       if (mem && cloud.pushed[key] && (cloud.pushed[key] !== sig(photoDoc(mem)) || (p && sig(photoDoc(p)) !== sig(photoDoc(mem)))) && !cloud.force[key]) continue;
