@@ -223,6 +223,10 @@
   details.newph summary::-webkit-details-marker{display:none}
   details.newph[open] summary{margin-bottom:10px}
   .fold.wait{border-style:dashed;border-color:#93c5fd;background:#f8fbff}
+  .nf-ph{width:150px;display:flex;flex-direction:column;gap:4px}
+  .nf-ph .th{width:150px;height:150px}
+  .nf-ph .nf-cap{font-size:12px;padding:5px 7px;resize:vertical}
+  .th .throt{position:absolute;bottom:3px;right:3px;background:rgba(255,255,255,.92);color:#1e3a8a;border-radius:999px;width:26px;height:26px;padding:0;font-size:15px;line-height:26px}
   .th .thx{position:absolute;top:3px;right:3px;background:rgba(255,255,255,.92);color:var(--red);border-radius:999px;width:22px;height:22px;padding:0;font-size:14px;line-height:22px}
   .bdg-w{color:#92400e;background:#fef3c7;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px}
   .bdg-ok{color:#166534;background:#dcfce7;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px}
@@ -245,7 +249,7 @@
   .pdopts{display:flex;flex-wrap:wrap;gap:8px}
   .pdopts label{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer}
   .pdopts label:has(input:checked){border-color:var(--blue);background:#eff6ff}
-  @media (max-width:820px){ .th{width:96px;height:96px} .lbnav{font-size:34px;padding:4px 12px 8px} .lbprev{left:6px}.lbnext{right:6px} .etiles{grid-template-columns:repeat(2,minmax(0,1fr))} .etile{flex-direction:column;align-items:flex-start;gap:6px} .folds{grid-template-columns:minmax(0,1fr)} }
+  @media (max-width:820px){ .nf-ph{width:calc(50% - 6px)} .nf-ph .th{width:100%;height:auto;aspect-ratio:1} .th{width:96px;height:96px} .lbnav{font-size:34px;padding:4px 12px 8px} .lbprev{left:6px}.lbnext{right:6px} .etiles{grid-template-columns:repeat(2,minmax(0,1fr))} .etile{flex-direction:column;align-items:flex-start;gap:6px} .folds{grid-template-columns:minmax(0,1fr)} }
   /* print area */
   #print{display:none}
   @media print{
@@ -588,7 +592,7 @@
           <span id="saveState" class="muted small"></span>
           <button class="btn-ghost" id="btnEdit"></button>
           <button class="btn" id="btnPdf"></button>
-          <button class="btn-ghost" id="btnPdfDl"></button>
+          <button class="btn-ghost" id="btnPdfDl" hidden></button>
           <button class="btn-danger" id="btnDelVisit" data-t="delVisit"></button>
         </div>
 
@@ -784,7 +788,7 @@ const STR = {
     setSyncUrl: 'Pautan Sync (Apps Script)', setSyncKey: 'Kata Kunci Sync',
     syncHint: 'Biarkan kosong jika belum guna sync. Data tetap selamat dalam peranti ini.',
     onlyImages: 'Sila pilih fail imej sahaja.', processing: n => `Memproses ${n} gambar…`, added: n => `${n} gambar ditambah ✓`,
-    readFail: n => 'Gagal baca gambar: ' + n, delPhotoQ: 'Buang gambar ini?', noDl: 'Tiada gambar untuk dimuat turun.',
+    readFail: n => 'Gagal baca gambar: ' + n, delPhotoQ: 'Buang gambar ini?', rotate: 'Pusing', capPhShort: 'Catatan (pilihan)', notHereYet: 'Gambar ini belum dimuat turun ke peranti ini.', noDl: 'Tiada gambar untuk dimuat turun.',
     downloading: n => `Memuat turun ${n} gambar…`, camFail: m => 'Gagal akses kamera: ' + m,
     fillA: 'Sila isi Ladang dahulu.', noLib: 'Pustaka PDF belum dimuatkan. Buka sekali dengan internet.',
     makingPdf: 'Menjana PDF…', pdfOk: 'PDF berjaya dijana ✓', pdfFail: m => 'Gagal jana PDF: ' + m,
@@ -875,7 +879,7 @@ const STR = {
     setSyncUrl: 'Sync Link (Apps Script)', setSyncKey: 'Sync Password',
     syncHint: 'Leave empty if not using sync yet. Your data stays safe on this device.',
     onlyImages: 'Please choose image files only.', processing: n => `Processing ${n} photo(s)…`, added: n => `${n} photo(s) added ✓`,
-    readFail: n => 'Could not read photo: ' + n, delPhotoQ: 'Remove this photo?', noDl: 'No photos to download.',
+    readFail: n => 'Could not read photo: ' + n, delPhotoQ: 'Remove this photo?', rotate: 'Rotate', capPhShort: 'Remark (optional)', notHereYet: 'This photo is not downloaded to this device yet.', noDl: 'No photos to download.',
     downloading: n => `Downloading ${n} photo(s)…`, camFail: m => 'Cannot open camera: ' + m,
     fillA: 'Please fill in Estate first.', noLib: 'PDF library not loaded. Open once with internet.',
     makingPdf: 'Creating PDF…', pdfOk: 'PDF created ✓', pdfFail: m => 'PDF failed: ' + m,
@@ -1296,8 +1300,11 @@ function renderNewFolder() {
   sel.innerHTML = `<option value="">${esc(T('chooseEstate'))}</option>` + estateNames().map(n => `<option ${n === nf.estate ? 'selected' : ''}>${esc(n)}</option>`).join('') + `<option value="__new">${esc(T('newEstate'))}</option>`;
   sel.value = nf.estate;
   $('nfRef').placeholder = nf.estate ? T('autoRef', folderRefAuto().ref) : T('autoRefNone');
-  $('nfThumbs').innerHTML = nf.pick.map((p, i) => `<div class="th"><img src="${p.url}" alt=""><button class="thx" data-i="${i}" title="Remove">×</button></div>`).join('');
+  $('nfThumbs').innerHTML = nf.pick.map((p, i) => `<div class="nf-ph"><div class="th"><img src="${p.url}" alt=""><span class="num">${i + 1}</span><button class="thx" data-i="${i}" title="Remove">×</button><button class="throt" data-i="${i}" title="${esc(T('rotate'))}">⟳</button></div>
+    <textarea class="f-in nf-cap" rows="2" maxlength="${CAPTION_MAX}" data-i="${i}" placeholder="${esc(T('capPhShort'))}">${esc(p.cap || '')}</textarea></div>`).join('');
   $('nfThumbs').querySelectorAll('.thx').forEach(b => b.onclick = () => { URL.revokeObjectURL(nf.pick[+b.dataset.i].url); nf.pick.splice(+b.dataset.i, 1); renderNewFolder(); });
+  $('nfThumbs').querySelectorAll('.throt').forEach(b => b.onclick = async () => { const p = nf.pick[+b.dataset.i]; p.blob = await rotateBlob(p.blob); URL.revokeObjectURL(p.url); p.url = URL.createObjectURL(p.blob); renderNewFolder(); });
+  $('nfThumbs').querySelectorAll('.nf-cap').forEach(t => t.oninput = () => { nf.pick[+t.dataset.i].cap = t.value; });
   $('nfSave').textContent = T('saveFolder', nf.pick.length);
 }
 $('nfEstate').addEventListener('change', async e => {
@@ -1322,7 +1329,7 @@ $('nfSave').onclick = async () => {
   if (!nf.estate) { $('nfEstate').classList.add('bad'); $('nfEstate').focus(); return toast(T('fillA')); }
   const f = newFolder(nf.estate, $('nfRef').value.trim(), $('nfNote').value.trim());
   for (const p of nf.pick) {
-    const rec = { id: uid(), visitId: f.id, blob: p.blob, caption: '', at: Date.now(), by: meName() };
+    const rec = { id: uid(), visitId: f.id, blob: p.blob, caption: (p.cap || '').trim(), at: Date.now(), by: meName() };
     await DB.put('photos', rec); photoCache[rec.id] = rec; f.photoIds.push(rec.id);
   }
   await saveFolders();
@@ -1440,8 +1447,9 @@ function setMode(edit) {
   if (cur?.unsaved) edit = true;
   $('btnView').textContent = cur?.unsaved ? T('saveVisit') : T('doneEditing');
   $('btnDiscard').style.display = cur?.unsaved ? '' : 'none';
-  ['btnPdf', 'btnPdfDl', 'btnDelVisit'].forEach(id => $(id).style.display = cur?.unsaved ? 'none' : '');
+  ['btnPdf', 'btnDelVisit'].forEach(id => $(id).style.display = cur?.unsaved ? 'none' : '');
   if (!edit && editMode && editDirty && cur) { logEv(cur, 'edited'); editDirty = false; saveNow(); }
+  if (!edit && editMode) setTimeout(() => syncAll(), 16000);      // finished editing: send to Google Drive shortly
   editMode = edit;
   $('docView').style.display = edit ? 'none' : '';
   $('docEdit').style.display = edit ? '' : 'none';
@@ -1902,7 +1910,7 @@ function renderPhotos() {
         <div class="ph-count"></div>
         <div class="ph-tools">
           <button data-a="up" title="◀">◀</button><button data-a="down" title="▶">▶</button>
-          <button data-a="dl" title="Download">💾</button><button data-a="del" class="del" title="Delete">🗑</button>
+          <button data-a="rot" title="${esc(T('rotate'))}">⟳</button><button data-a="dl" title="Download">💾</button><button data-a="del" class="del" title="Delete">🗑</button>
         </div>
         <button class="ph-mv" data-a="mv2">${esc(T('moveBack'))}</button>
       </div>`;
@@ -1924,12 +1932,36 @@ function renderPhotos() {
       if (a === 'up' && i > 0) { [cur.photoIds[i - 1], cur.photoIds[i]] = [cur.photoIds[i], cur.photoIds[i - 1]]; markChanged(); renderPhotos(); }
       if (a === 'down' && i < cur.photoIds.length - 1) { [cur.photoIds[i + 1], cur.photoIds[i]] = [cur.photoIds[i], cur.photoIds[i + 1]]; markChanged(); renderPhotos(); }
       if (a === 'dl') downloadBlob(p.blob, photoName(i));
+      if (a === 'rot') rotatePhoto(pid);
       if (a === 'del') removePhoto(pid);
 
     });
     g.appendChild(card);
   });
   updSel();
+}
+async function rotateBlob(blob) {          // turn a photo 90° clockwise
+  let src;
+  try { src = await createImageBitmap(blob); }
+  catch { src = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(blob); }); }
+  const c = document.createElement('canvas'); c.width = src.height; c.height = src.width;
+  const g = c.getContext('2d'); g.translate(c.width, 0); g.rotate(Math.PI / 2); g.drawImage(src, 0, 0);
+  return new Promise(res => c.toBlob(res, 'image/jpeg', 0.9));
+}
+let rotBusy = false;
+async function rotatePhoto(pid) {
+  if (rotBusy) return; rotBusy = true;
+  try {
+    const p = await getPhoto(pid);
+    if (!p || !p.blob || p.blob === PH_BLOB) return toast(T('notHereYet'));
+    const np = { id: uid(), visitId: p.visitId, blob: await rotateBlob(p.blob), caption: p.caption || '', at: p.at, by: p.by };   // a new photo record, so every device and Google Drive get the turned picture
+    await DB.put('photos', np); photoCache[np.id] = np;
+    cur.photoIds[cur.photoIds.indexOf(pid)] = np.id;
+    (cur.attached || []).forEach(a => { const k = a.photoIds.indexOf(pid); if (k >= 0) a.photoIds[k] = np.id; });
+    if (selPh.has(pid)) { selPh.delete(pid); selPh.add(np.id); }
+    await DB.del('photos', pid); delete photoCache[pid]; if (urls[pid]) { URL.revokeObjectURL(urls[pid]); delete urls[pid]; }
+    markChanged(); renderPhotos(); renderView?.();
+  } finally { rotBusy = false; }
 }
 async function removePhoto(pid) {
   if (!confirm(T('delPhotoQ'))) return;
@@ -2191,10 +2223,6 @@ async function syncVisit(v) {
     const name = `${L.photo}_${String(i + 1).padStart(2, '0')}.jpg`;
     await drivePhoto(base, photos[i].id, name); keep.push(name);
   }
-  if (window.jspdf && v.ladang && v.pegawai) {
-    const doc = await buildPDF(v), name = pdfName(v);
-    await post({ ...base, action: 'file', name, mime: 'application/pdf', data: await b64(doc.output('blob')) }); keep.push(name);
-  }
   await post({ ...base, action: 'cleanup', keep });
 }
 async function syncAll(manual = false) {
@@ -2202,7 +2230,7 @@ async function syncAll(manual = false) {
   if (!settings.syncUrl) { if (manual) toast(T('noSyncSet')); return; }
   if (!navigator.onLine) { if (manual) toast(T('noNet')); return; }
   await flushSave();
-  const ready = x => x.status === 'pending' && (manual || Date.now() - (x.updatedAt || 0) > 120000);   // wait 2 min after the last edit
+  const ready = x => x.status === 'pending' && (manual || (!(editMode && cur === x) && Date.now() - (x.updatedAt || 0) > 15000));   // send ~15 s after the last change, never while it is still being edited
   const todo = [...savedV().filter(ready), ...folders.filter(ready)].filter(canEdit), trash = [...(settings.trashQ || [])];
   if (!todo.length && !trash.length) { if (manual) toast(T('allSynced')); return; }
   syncing = true;
@@ -2255,7 +2283,7 @@ let instEvt = null;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); instEvt = e; $('tbInstall').style.display = ''; });
 window.addEventListener('appinstalled', () => { instEvt = null; $('tbInstall').style.display = 'none'; toast(T('installed')); });
 $('tbInstall').onclick = async () => { if (!instEvt) return; instEvt.prompt(); await instEvt.userChoice; instEvt = null; $('tbInstall').style.display = 'none'; };
-setInterval(() => { updateNet(); syncAll(); }, 60000);
+setInterval(() => { updateNet(); syncAll(); }, 15000);
 setInterval(() => cloudSync(), 30000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) cloudSync(); });
 
