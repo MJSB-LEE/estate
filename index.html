@@ -271,6 +271,10 @@
   .role-badge{border:1.5px solid #fff;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:800;letter-spacing:.5px}
   .tb-user{font-size:14px;white-space:nowrap}
   .tb-btn{background:rgba(255,255,255,.15);color:#fff;font-size:13px;padding:6px 12px;white-space:nowrap}
+  a.portal-link{display:inline-flex;align-items:center;gap:4px;text-decoration:none;border-radius:8px;font-weight:600}
+  .login-portal{position:absolute;top:16px;left:16px;color:#fff;background:rgba(255,255,255,.15);padding:8px 14px;font-size:14px}
+  .login-portal:hover{background:rgba(255,255,255,.25)}
+  body.is-off a.portal-link{display:none}
   .tb-btn:hover{background:rgba(255,255,255,.28)}
   .tb-btn.danger{background:#dc2626}
   .tb-btn.danger:hover{background:#b91c1c}
@@ -373,6 +377,7 @@
 
 <div class="top">
   <button id="btnMenu">☰</button>
+  <a class="tb-btn portal-link" href="../" title="MJSB Portal">← <span class="tx">Portal</span></a>
   <div class="logo"><img id="logoImg" alt="" src="logo.jpg" onerror="this.parentNode.style.display='none'"></div>
   <h1 id="appTitle">MASIH JAYA GROUP — LAWATAN LADANG</h1>
   <span id="netPill" class="pill">● Online</span>
@@ -487,6 +492,7 @@
           <button data-st="lists" data-t="setLists"></button>
           <button data-st="users" data-t="setUsers"></button>
           <button data-st="sync">Google Drive Sync</button>
+          <button data-st="backup" data-t="setBackup"></button>
         </div>
         <div class="card">
           <div class="spane" data-sp="general">
@@ -547,6 +553,20 @@
             </div>
             <p class="hint" data-t="syncHint"></p>
             <div style="margin-top:12px"><button class="btn-ghost" id="btnTestSync" data-t="testSync"></button></div>
+          </div>
+
+          <div class="spane" data-sp="backup">
+            <p class="hint" style="margin-top:0" data-t="bkIntro"></p>
+            <div class="row-actions" style="flex-wrap:wrap;gap:10px;margin:12px 0 18px">
+              <button class="btn" id="bkData">⬇ <span data-t="bkData"></span></button>
+              <button class="btn-ghost" id="bkFull">⬇ <span data-t="bkFull"></span></button>
+            </div>
+            <p class="hint" data-t="bkHintDl"></p>
+            <div style="border-top:1px solid var(--line);margin:18px 0 12px"></div>
+            <button class="btn-ghost" id="bkRestore">⬆ <span data-t="bkRestore"></span></button>
+            <input type="file" id="bkFile" accept=".json,application/json" hidden>
+            <p class="hint" data-t="bkHintRs"></p>
+            <p class="hint" id="bkLast"></p>
           </div>
 
           <div class="row-actions" style="margin-top:20px;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px">
@@ -693,6 +713,7 @@
 <div id="toast"></div>
 
 <div class="login" id="login" hidden>
+  <a class="portal-link login-portal" href="../">← MJSB Portal</a>
   <div class="login-card">
     <div class="lang login-lang"><button type="button" data-lang="ms">BM</button><button type="button" data-lang="en">EN</button></div>
     <img id="loginLogo" alt="" src="logo.jpg" onerror="this.style.display='none'">
@@ -790,7 +811,14 @@ const STR = {
     byEstate2: '🗂 Gambar ikut ladang', clickEstate: 'Klik ladang untuk lihat lawatan dan gambarnya.', allEstatesCrumb: '📂 Semua ladang',
     nVisits: n => `${n} lawatan`, estatePhotos: e => `🗂 Lawatan ${e}`, clickFolder: 'Klik lawatan untuk lihat atau tambah gambar.', addPhotos: '⬆ Tambah gambar', takePhoto: '📷 Ambil gambar',
     noEstatesYet: 'Belum ada lawatan.', noPhotoInFolder: 'Tiada gambar dalam lawatan ini.', photoDeleted: 'Gambar dipadam.',
-    userLbl: 'Pengguna', changePassShort: 'Tukar kata laluan', logoutShort: 'Log keluar', installApp: 'Pasang di telefon', installed: 'Sudah dipasang. Buka dari ikon di skrin utama.',
+    userLbl: 'Pengguna', changePassShort: 'Tukar kata laluan', logoutShort: 'Log keluar',
+    setBackup: 'Sandaran', bkIntro: 'Simpan salinan semua data (lawatan, folder gambar, pengguna, tetapan) dalam satu fail .json di PC anda. Buat sekali seminggu atau sebulan.',
+    bkData: 'Muat turun sandaran (data sahaja)', bkFull: 'Muat turun sandaran + gambar',
+    bkHintDl: 'Data sahaja = fail kecil; gambar masih selamat dalam Google Drive. "+ gambar" = fail besar, tetapi lengkap walaupun tanpa Google Drive.',
+    bkRestore: 'Pulihkan dari fail sandaran…', bkHintRs: 'Pulihkan hanya menambah atau mengembalikan rekod. Ia tidak memadam apa-apa yang ada sekarang.',
+    bkMaking: 'Menyediakan sandaran…', bkDone: 'Sandaran dimuat turun ✓', bkBad: 'Ini bukan fail sandaran Site Visit.',
+    bkAsk: (v, f, p) => `Pulihkan ${v} lawatan, ${f} folder gambar dan ${p} gambar dari fail ini?`,
+    bkRestored: (v, f, p) => `Dipulihkan: ${v} lawatan, ${f} folder, ${p} gambar ✓`, bkLast: d => `Sandaran terakhir dari peranti ini: ${d}`, installApp: 'Pasang di telefon', installed: 'Sudah dipasang. Buka dari ikon di skrin utama.',
     edit: '✏️ Edit', print: '🖨 Cetak', doneEditing: '✓ Siap edit', timeline: 'Garis masa', uploadPhotos: '⬆ Muat naik gambar',
     nextDraftH: 'Seterusnya: tanda lawatan siap', nextDraftP: 'Bila gambar dan keterangan sudah lengkap, tanda siap. Ia akan sync ke Google Drive bila ada internet.', markDone: '✓ Tanda siap',
     nextPendH: '⏳ Menunggu sync', nextPendNoSync: 'Sync belum disetkan (Tetapan → Google Drive Sync). Lawatan selamat dalam peranti ini.', nextPendP: 'Akan dimuat naik sendiri bila ada internet.', syncNowBtn: '☁️ Sync sekarang',
@@ -800,7 +828,7 @@ const STR = {
     username: 'Nama pengguna', fullName: 'Nama penuh (dicetak sebagai pegawai)', password: 'Kata laluan', password2: 'Ulang kata laluan',
     rememberMe: 'Kekal log masuk dalam peranti ini', login: 'Log Masuk', createAdmin: 'Cipta Akaun Admin',
     firstSetup: 'Kali pertama: cipta akaun admin anda', pleaseLogin: 'Sila log masuk',
-    badLogin: 'Nama pengguna atau kata laluan salah.', passShort: 'Kata laluan sekurang-kurangnya 4 aksara.', passMismatch: 'Kata laluan tidak sama.',
+    badLogin: 'Nama pengguna atau kata laluan salah.', notYours: 'Hanya pembuat lawatan atau admin boleh ubah.', needNet: 'Log masuk kali pertama di peranti ini perlukan internet.', cloudRelogin: 'Sila log keluar dan log masuk semula (dengan internet) untuk kongsi data.', sessionEnded: 'Sesi tamat. Sila log masuk semula.', cloudFail: m => 'Pangkalan data: ' + m, cloudShared: 'Pengguna dan tetapan dikongsi oleh semua peranti.', passShort: 'Kata laluan sekurang-kurangnya 4 aksara.', passMismatch: 'Kata laluan tidak sama.',
     userExists: 'Nama pengguna sudah wujud.', fillAll: 'Sila isi semua ruangan.', changePass: '🔑 Tukar kata laluan', logout: '🚪 Log keluar',
     newPassQ: 'Kata laluan baru:', passChanged: 'Kata laluan ditukar ✓', resetPass: 'Reset', delUser: 'Padam',
     delUserQ: n => `Padam pengguna ${n}?`, lastAdmin: 'Mesti ada sekurang-kurangnya seorang admin.', userAdded: 'Pengguna ditambah ✓',
@@ -874,7 +902,14 @@ const STR = {
     byEstate2: '🗂 Photos by estate', clickEstate: 'Click an estate to see its visits and photos.', allEstatesCrumb: '📂 All estates',
     nVisits: n => `${n} visit${n === 1 ? '' : 's'}`, estatePhotos: e => `🗂 ${e} visits`, clickFolder: 'Click a visit to see or add photos.', addPhotos: '⬆ Add photos', takePhoto: '📷 Take photo',
     noEstatesYet: 'No visits yet.', noPhotoInFolder: 'No photos in this visit.', photoDeleted: 'Photo deleted.',
-    userLbl: 'User', changePassShort: 'Change password', logoutShort: 'Logout', installApp: 'Install on phone', installed: 'Installed. Open it from the icon on your home screen.',
+    userLbl: 'User', changePassShort: 'Change password', logoutShort: 'Logout',
+    setBackup: 'Backup', bkIntro: 'Save a copy of all data (visits, photo folders, users, settings) as one .json file on your PC. Do it once a week or once a month.',
+    bkData: 'Download backup (data only)', bkFull: 'Download backup + photos',
+    bkHintDl: 'Data only = small file; the photos are still safe in Google Drive. "+ photos" = big file, but complete even without Google Drive.',
+    bkRestore: 'Restore from backup file…', bkHintRs: 'Restore only adds or brings back records. It never deletes anything you have now.',
+    bkMaking: 'Preparing backup…', bkDone: 'Backup downloaded ✓', bkBad: 'This is not a Site Visit backup file.',
+    bkAsk: (v, f, p) => `Restore ${v} visits, ${f} photo folders and ${p} photos from this file?`,
+    bkRestored: (v, f, p) => `Restored: ${v} visits, ${f} folders, ${p} photos ✓`, bkLast: d => `Last backup from this device: ${d}`, installApp: 'Install on phone', installed: 'Installed. Open it from the icon on your home screen.',
     edit: '✏️ Edit', print: '🖨 Print', doneEditing: '✓ Done editing', timeline: 'Timeline', uploadPhotos: '⬆ Upload photos',
     nextDraftH: 'Next: mark visit as done', nextDraftP: 'When the photos and captions are complete, mark it done. It syncs to Google Drive when there is internet.', markDone: '✓ Mark as done',
     nextPendH: '⏳ Waiting to sync', nextPendNoSync: 'Sync is not set up yet (Settings → Google Drive Sync). The visit is saved on this device.', nextPendP: 'It will upload by itself when there is internet.', syncNowBtn: '☁️ Sync now',
@@ -884,7 +919,7 @@ const STR = {
     username: 'Username', fullName: 'Full name (printed as officer)', password: 'Password', password2: 'Repeat password',
     rememberMe: 'Keep me logged in on this device', login: 'Log In', createAdmin: 'Create Admin Account',
     firstSetup: 'First time: create your admin account', pleaseLogin: 'Please log in',
-    badLogin: 'Wrong username or password.', passShort: 'Password must be at least 4 characters.', passMismatch: 'Passwords do not match.',
+    badLogin: 'Wrong username or password.', notYours: 'Only the person who made this visit, or an admin, can change it.', needNet: 'The first login on this device needs internet.', cloudRelogin: 'Please log out and log in again (with internet) to share data.', sessionEnded: 'Session ended. Please log in again.', cloudFail: m => 'Database: ' + m, cloudShared: 'Users and settings are shared by all devices.', passShort: 'Password must be at least 4 characters.', passMismatch: 'Passwords do not match.',
     userExists: 'Username already exists.', fillAll: 'Please fill in all fields.', changePass: '🔑 Change password', logout: '🚪 Log out',
     newPassQ: 'New password:', passChanged: 'Password changed ✓', resetPass: 'Reset', delUser: 'Delete',
     delUserQ: n => `Delete user ${n}?`, lastAdmin: 'There must be at least one admin.', userAdded: 'User added ✓',
@@ -927,7 +962,7 @@ const DB = {
   },
   get: (s, k) => DB.tx(s, 'readonly', st => st.get(k)),
   all: s => DB.tx(s, 'readonly', st => st.getAll()),
-  put: (s, v, k) => DB.tx(s, 'readwrite', st => k === undefined ? st.put(v) : st.put(v, k)),
+  put: (s, v, k) => { if (s === 'photos' && v.blob === PH_BLOB) v = { ...v, blob: null }; return DB.tx(s, 'readwrite', st => k === undefined ? st.put(v) : st.put(v, k)); },
   del: (s, k) => DB.tx(s, 'readwrite', st => st.delete(k)),
 };
 
@@ -941,7 +976,7 @@ let settings = {
   estates: [], officers: [],
   logo: null, syncUrl: '', syncKey: '', lastPegawai: '',
 };
-const saveSettings = () => DB.put('settings', settings, 'main');
+const saveSettings = () => { scheduleCloud(); return DB.put('settings', settings, 'main'); };
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const todayKL = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
@@ -1107,8 +1142,17 @@ function visitRows(list, tbl, { withSub = true } = {}) {
   });
   tbl.appendChild(tb);
 }
-async function getPhoto(pid) { if (!photoCache[pid]) { const p = await DB.get('photos', pid); if (p) photoCache[pid] = p; } return photoCache[pid]; }
-function urlOf(p) { return urls[p.id] || (urls[p.id] = URL.createObjectURL(p.blob)); }
+async function getPhoto(pid) {
+  if (!photoCache[pid]) { const p = await DB.get('photos', pid); if (p) photoCache[pid] = p; }
+  const p = photoCache[pid];
+  if (p && (!p.blob || p.blob === PH_BLOB)) {
+    const b = await fetchDrivePhoto(pid).catch(() => null);
+    if (b) { p.blob = b; if (urls[pid]) { URL.revokeObjectURL(urls[pid]); delete urls[pid]; } await DB.put('photos', p); }
+    else p.blob = PH_BLOB;
+  }
+  return p;
+}
+function urlOf(p) { return urls[p.id] || (urls[p.id] = URL.createObjectURL(p.blob || PH_BLOB)); }
 
 function fillSelect(sel, items, allLabel, keep = true) {
   const old = sel.value;
@@ -1129,7 +1173,7 @@ function renderHome() {
   $('stPending').textContent = savedV().filter(v => v.status !== 'synced').length;
   visitRows(savedV().slice(0, 8), $('tblRecent'));
 }
-$('btnSyncNow').onclick = () => syncAll(true);
+$('btnSyncNow').onclick = async () => { await cloudSync(true); syncAll(true); };
 
 /* ---------- List ---------- */
 let listInit = false;
@@ -1425,7 +1469,7 @@ function renderSheets(v, sh) {
 
 /* ---------- Photo folders (taken before a visit) ---------- */
 let folders = [];
-const saveFolders = () => DB.put('settings', folders.map(f => ({ ...f })), 'folders');
+const saveFolders = () => { scheduleCloud(); return DB.put('settings', folders.map(f => ({ ...f })), 'folders'); };
 const saveObj = v => v.isFolder ? saveFolders() : DB.put('visits', v);
 const waitingFor = e => folders.filter(f => f.ladang === e).sort((a, b) => b.createdAt - a.createdAt);
 function folderRefAuto() {
@@ -1645,7 +1689,7 @@ async function markDone() {
   if (!settings.syncUrl) return toast(T('markedDone'), 4000);
   syncAll(true);
 }
-$('btnEdit').onclick = () => setMode(true);
+$('btnEdit').onclick = () => { if (!canEdit(cur)) return toast(T('notYours')); setMode(true); };
 $('btnView').onclick = async () => {
   await flushSave();
   if (cur.unsaved) {
@@ -1731,7 +1775,7 @@ function markChanged() {
 async function saveNow() {
   clearTimeout(saveTimer); saveTimer = null;
   if (!cur) return;
-  await DB.put('visits', cur);
+  await DB.put('visits', cur); scheduleCloud();
   $('saveState').textContent = T('saved') + ' ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   renderDocHead(); renderTabs(); updateNet(); renderView();
 }
@@ -2060,6 +2104,7 @@ $('pvPrint').onclick = async () => {
   setTimeout(() => window.print(), 50);
 };
 $('btnDelVisit').onclick = async () => {
+  if (!canEdit(cur)) return toast(T('notYours'));
   if (!confirm(T('delVisitQ', `${docLabel(cur)} · ${cur.ladang || T('noEstate')}`))) return;
   for (const pid of cur.photoIds) { await DB.del('photos', pid); delete photoCache[pid]; }
   await DB.del('visits', cur.id);
@@ -2117,7 +2162,7 @@ async function syncAll(manual = false) {
   if (!navigator.onLine) { if (manual) toast(T('noNet')); return; }
   await flushSave();
   const ready = x => x.status === 'pending' && (manual || Date.now() - (x.updatedAt || 0) > 120000);   // wait 2 min after the last edit
-  const todo = [...savedV().filter(ready), ...folders.filter(ready)], trash = [...(settings.trashQ || [])];
+  const todo = [...savedV().filter(ready), ...folders.filter(ready)].filter(canEdit), trash = [...(settings.trashQ || [])];
   if (!todo.length && !trash.length) { if (manual) toast(T('allSynced')); return; }
   syncing = true; updateNet();
   let ok = 0;
@@ -2146,6 +2191,7 @@ function updateNet() {
   if (!navigator.onLine) { p.className = 'pill off'; p.textContent = `● ${T('offline')}${w}`; }
   else if (syncing) { p.className = 'pill'; p.textContent = T('syncingNow'); }
   else { p.className = 'pill'; p.textContent = `● ${T('online')}${w}`; }
+  if (cloudOn() && cloudPending) p.textContent += ` · ☁ ${cloudPending}`;
   const np = $('navPending'), nd = savedV().filter(v => v.status !== 'synced').length;
   np.style.display = nd ? '' : 'none'; np.textContent = nd;
 }
@@ -2154,13 +2200,17 @@ function refreshActive() {
   else if (active.startsWith('doc:')) { renderDocHead(); renderView(); }
   renderTabs();
 }
-window.addEventListener('online', () => { updateNet(); syncAll(); });
+window.addEventListener('online', async () => { updateNet(); await cloudSync(); syncAll(); });
 window.addEventListener('offline', updateNet);
+const portalVis = () => document.body.classList.toggle('is-off', !navigator.onLine);
+window.addEventListener('online', portalVis); window.addEventListener('offline', portalVis); portalVis();
 let instEvt = null;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); instEvt = e; $('tbInstall').style.display = ''; });
 window.addEventListener('appinstalled', () => { instEvt = null; $('tbInstall').style.display = 'none'; toast(T('installed')); });
 $('tbInstall').onclick = async () => { if (!instEvt) return; instEvt.prompt(); await instEvt.userChoice; instEvt = null; $('tbInstall').style.display = 'none'; };
 setInterval(() => { updateNet(); syncAll(); }, 60000);
+setInterval(() => cloudSync(), 30000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) cloudSync(); });
 
 /* ---------- Settings page ---------- */
 function applyBrand() {
@@ -2256,6 +2306,7 @@ $('addTitName').addEventListener('keydown', e => { if (e.key === 'Enter') { e.pr
 let setTab = 'general';
 function showSetTab(k) {
   setTab = k;
+  if (k === 'backup') { const t = localStorage.getItem('ll.lastBackup'); $('bkLast').textContent = t ? T('bkLast', new Date(+t).toLocaleString()) : ''; }
   document.querySelectorAll('#stabs button').forEach(b => b.classList.toggle('on', b.dataset.st === k));
   document.querySelectorAll('.spane').forEach(p => p.classList.toggle('on', p.dataset.sp === k));
 }
@@ -2265,6 +2316,67 @@ $('addEst').onclick = () => {
   estEdit.push(n); $('addEstName').value = ''; renderListEditors(); $('addEstName').focus();
 };
 [['addEstName', 'addEst']].forEach(([i, b]) => $(i).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $(b).click(); } }));
+
+/* ---------- Backup (.json) ---------- */
+async function makeBackup(withPhotos) {
+  toast(T('bkMaking'));
+  const photos = [];
+  for (const p of await DB.all('photos')) {
+    const o = { id: p.id, visitId: p.visitId, caption: p.caption || '', at: p.at || 0, by: p.by || '' };
+    if (withPhotos && p.blob && p.blob !== PH_BLOB) { o.mime = p.blob.type || 'image/jpeg'; o.data = await b64(p.blob); }
+    photos.push(o);
+  }
+  const data = { app: 'site-visit', version: 1, createdAt: new Date().toISOString(), by: me?.u || '',
+    visits: visits.filter(v => !v.unsaved).map(clean), folders: folders.map(clean),
+    settings: clean(settings), photos, drive: { ...cloud.drive } };
+  const d = new Date(), pad = n => String(n).padStart(2, '0');
+  const name = `site-visit-backup-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}${withPhotos ? '-with-photos' : ''}.json`;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  localStorage.setItem('ll.lastBackup', Date.now()); showSetTab('backup'); toast(T('bkDone'));
+}
+async function restoreBackup(file) {
+  let d; try { d = JSON.parse(await file.text()); } catch (e) { d = null; }
+  if (!d || d.app !== 'site-visit' || !Array.isArray(d.visits)) return toast(T('bkBad'), 4000);
+  if (!confirm(T('bkAsk', d.visits.length, (d.folders || []).length, (d.photos || []).length))) return;
+  const now = Date.now(); let nv = 0, nf = 0, np = 0;
+  for (const v of d.visits) {             // add missing, or replace with the backup copy if it is newer
+    const ex = visits.find(x => x.id === v.id);
+    if (ex && (ex.updatedAt || 0) >= (v.updatedAt || 0)) continue;
+    const nv2 = { ...v, updatedAt: now };
+    if (ex) { Object.keys(ex).forEach(k => delete ex[k]); Object.assign(ex, nv2); await DB.put('visits', ex); }
+    else { visits.push(nv2); await DB.put('visits', nv2); learn(nv2); }
+    nv++;
+  }
+  for (const f of d.folders || []) {
+    const ex = folders.find(x => x.id === f.id);
+    if (ex && (ex.updatedAt || 0) >= (f.updatedAt || 0)) continue;
+    if (ex) { Object.keys(ex).forEach(k => delete ex[k]); Object.assign(ex, f, { updatedAt: now }); } else folders.push({ ...f, updatedAt: now });
+    nf++;
+  }
+  Object.entries(d.drive || {}).forEach(([k, v]) => { if (!cloud.drive[k]) cloud.drive[k] = v; });
+  for (const p of d.photos || []) {
+    const ex = await DB.get('photos', p.id);
+    let blob = null;
+    if (p.data) { const bin = atob(p.data), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); blob = new Blob([a], { type: p.mime || 'image/jpeg' }); }
+    if (ex && (ex.blob || !blob)) continue;
+    await DB.put('photos', { id: p.id, visitId: p.visitId, caption: p.caption, at: p.at, by: p.by, blob: blob || ex?.blob || null });
+    delete photoCache[p.id]; np++;
+  }
+  const bs = d.settings || {};
+  for (const u of bs.users || []) if (!findUser(u.u)) { settings.users.push({ ...u, _pw: 1 }); }
+  SHARED_KEYS.forEach(k => { if ((settings[k] == null || settings[k] === '' || (Array.isArray(settings[k]) && !settings[k].length)) && bs[k] != null) settings[k] = bs[k]; });
+  visits.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  await saveCloud(); await saveFolders(); await saveSettings();
+  updateNet(); refreshActive(); scheduleCloud(1500); if (typeof downloadMissingPhotos === 'function' && cloudOn()) downloadMissingPhotos();
+  toast(T('bkRestored', nv, nf, np), 5000);
+}
+$('bkData').onclick = () => makeBackup(false);
+$('bkFull').onclick = () => makeBackup(true);
+$('bkRestore').onclick = () => $('bkFile').click();
+$('bkFile').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) restoreBackup(f); };
 
 /* ---------- Users & login (username + password) ---------- */
 let me = null;   // { u, name, role }
@@ -2297,7 +2409,7 @@ function renderUsers() {
       if (a === 'reset') {
         const pw = prompt(`${u.u} — ${T('newPassQ')}`); if (pw === null) return;
         if (pw.length < 4) return toast(T('passShort'));
-        u.salt = newSalt(); u.hash = await hashPw(pw, u.salt); await saveSettings(); toast(T('passChanged'));
+        u.salt = newSalt(); u.hash = await hashPw(pw, u.salt); u._pw = 1; await saveSettings(); toast(T('passChanged'));
       }
       if (a === 'del') {
         if (u.role === 'admin' && settings.users.filter(x => x.role === 'admin').length < 2) return toast(T('lastAdmin'));
@@ -2316,14 +2428,18 @@ $('nuAdd').onclick = async () => {
   if (findUser(u)) return toast(T('userExists'));
   const salt = newSalt();
   const code = $('nuCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || nameCode(name);
-  settings.users.push({ u, name, code, role: $('nuRole').value, salt, hash: await hashPw(pw, salt) });
+  settings.users.push({ u, name, code, role: $('nuRole').value, salt, hash: await hashPw(pw, salt), _pw: 1 });
   await saveSettings(); renderUsers(); fillDatalists();
   $('nuUser').value = $('nuName').value = $('nuPass').value = $('nuCode').value = ''; toast(T('userAdded'));
 };
 
 let loginResolve = null;
-function openLogin() {
-  const setup = !settings.users.length;
+let loginSetup = false;
+async function openLogin() {
+  let setup = !settings.users.length;
+  if (setup && cloudOn() && navigator.onLine) { try { setup = !(await rpc('sv_status')).has_users; } catch (e) { setup = false; } }
+  else if (setup && cloudOn()) setup = false;
+  loginSetup = setup;
   $('loginCompany').textContent = settings.company || '';
   const lg = $('loginLogo'); lg.style.display = ''; lg.src = settings.logo || DEFAULT_LOGO;
   $('loginSub').textContent = setup ? T('firstSetup') : T('pleaseLogin');
@@ -2339,22 +2455,47 @@ function openLogin() {
 $('loginForm').onsubmit = async e => {
   e.preventDefault();
   const u = $('liUser').value.trim().toLowerCase(), pw = $('liPass').value, err = $('liErr');
-  if (!settings.users.length) {
+  if (loginSetup) {
     const name = $('liName').value.trim().toUpperCase();
     if (!u || !name || !pw) return err.textContent = T('fillAll');
     if (pw.length < 4) return err.textContent = T('passShort');
     if (pw !== $('liPass2').value) return err.textContent = T('passMismatch');
     const salt = newSalt();
+    settings.users = settings.users.filter(x => x.u !== u);
     settings.users.push({ u, name, code: nameCode(name), role: 'admin', salt, hash: await hashPw(pw, salt) });
     await saveSettings();
   }
-  const user = findUser(u);
-  if (!user || await hashPw(pw, user.salt) !== user.hash) { err.textContent = T('badLogin'); $('liPass').select(); return; }
+  let user = null, tok = null;
+  if (cloudOn() && navigator.onLine) {
+    $('liBtn').disabled = true;
+    try { const r = await rpc('sv_login', { p_username: u, p_password: pw, p_device: isPhone ? 'Phone' : 'Computer' }); tok = r.token; user = mergeMe(r.user); }
+    catch (e) {
+      if (e.message === 'NO_USERS') {      // first device: send this device's users to the database
+        const lu = findUser(u);
+        if (lu && lu.role === 'admin' && await hashPw(pw, lu.salt) === lu.hash) {
+          try {
+            const r = await rpc('sv_seed', { p_users: settings.users.map(x => ({ u: x.u, name: x.name, code: x.code || nameCode(x.name), role: x.role, salt: x.salt, hash: x.hash })), p_username: u, p_password: pw, p_device: isPhone ? 'Phone' : 'Computer' });
+            tok = r.token; user = lu; settings.users.forEach(x => cloud.pushed['user:' + x.u] = sig(userDoc(x)));
+            cloud.linked = true; await saveCloud();
+          } catch (e2) { err.textContent = T('cloudFail', e2.message); $('liBtn').disabled = false; return; }
+        }
+      } else if (e.message !== 'BAD_LOGIN' && e.message !== 'NET') { err.textContent = T('cloudFail', e.message); $('liBtn').disabled = false; return; }
+      if (!tok && e.message !== 'NET') { err.textContent = T('badLogin'); $('liPass').select(); $('liBtn').disabled = false; return; }
+    }
+    $('liBtn').disabled = false;
+  }
+  if (!user) {                          // offline: check the password saved on this device
+    user = findUser(u);
+    if (!user && cloudOn() && !settings.users.length) { err.textContent = T('needNet'); return; }
+    if (!user || !user.hash || await hashPw(pw, user.salt) !== user.hash) { err.textContent = T('badLogin'); $('liPass').select(); return; }
+  }
+  setToken(tok, $('liRem').checked && settings.allowRemember === 'yes');
   me = { u: user.u, name: user.name, role: user.role };
   sessionStorage.setItem('ll.session', user.u);
   if ($('liRem').checked && settings.allowRemember === 'yes') localStorage.setItem('ll.session', user.u); else localStorage.removeItem('ll.session');
   $('login').hidden = true; afterLogin(); toast(T('hello', user.name));
   loginResolve?.(); loginResolve = null;
+  cloudSync();
 };
 const isPhone = matchMedia('(pointer:coarse) and (max-width: 900px)').matches;
 const PHONE_OK = k => ['list', 'photos', 'newfolder'].includes(k) || k.startsWith('doc:');
@@ -2389,6 +2530,7 @@ document.addEventListener('click', e => { if (!e.target.closest('#userMenu')) $(
 $('mLogout').onclick = async () => {
   $('userMenu').classList.remove('open'); await flushSave();
   sessionStorage.removeItem('ll.session'); localStorage.removeItem('ll.session'); me = null;
+  const t = getToken(); setToken(null); if (t && navigator.onLine) rpc('sv_logout', { p_token: t }).catch(() => {});
   await openLogin();
   if (active === 'settings' && me.role !== 'admin') go('home');
 };
@@ -2396,14 +2538,199 @@ $('mPass').onclick = async () => {
   $('userMenu').classList.remove('open');
   const user = findUser(me.u); const pw = prompt(T('newPassQ')); if (pw === null) return;
   if (pw.length < 4) return toast(T('passShort'));
-  user.salt = newSalt(); user.hash = await hashPw(pw, user.salt); await saveSettings(); toast(T('passChanged'));
+  user.salt = newSalt(); user.hash = await hashPw(pw, user.salt); user._pw = 1; await saveSettings(); toast(T('passChanged'));
 };
+
+
+/* ---------- Shared database (Supabase) ----------
+   Everything is saved on this device first (works offline), then copied to the shared
+   database when there is internet, and changes from other devices are copied back.
+   Photos themselves go to Google Drive (Apps Script), the database keeps only their info. */
+const CLOUD = {
+  url: 'https://bjcjxmcvreegjipdxzks.supabase.co',              // Supabase → Settings → API → Project URL
+  key: 'sb_publishable_bcFfS7DJ7Reop7imPPYaJQ_gUio0R-7',          // Supabase → Settings → API Keys → Publishable key
+};
+const SHARED_KEYS = ['company', 'titles', 'rev', 'header', 'estates', 'logo', 'syncUrl', 'syncKey', 'allowRemember', 'pdfLang'];
+const PH_BLOB = new Blob(['<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#e5e7eb"/><text x="200" y="160" font-size="22" text-anchor="middle" fill="#6b7280" font-family="sans-serif">Photo not downloaded yet</text></svg>'], { type: 'image/svg+xml' });
+let cloud = { seq: 0, pushed: {}, drive: {}, linked: false, force: {} };
+let cloudBusy = false, cloudPending = 0, cloudTimer = null, cloudWarned = false;
+const cloudOn = () => !!(CLOUD.url && CLOUD.key);
+const saveCloud = () => DB.put('settings', cloud, 'cloud');
+const getToken = () => localStorage.getItem('ll.token') || sessionStorage.getItem('ll.token');
+function setToken(t, remember) {
+  localStorage.removeItem('ll.token'); sessionStorage.removeItem('ll.token');
+  if (t) { sessionStorage.setItem('ll.token', t); if (remember) localStorage.setItem('ll.token', t); }
+}
+function scheduleCloud(ms = 4000) { if (!cloudOn()) return; clearTimeout(cloudTimer); cloudTimer = setTimeout(() => cloudSync(), ms); }
+async function rpc(fn, args = {}) {
+  let r;
+  try { r = await fetch(CLOUD.url.replace(/\/+$/, '') + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: CLOUD.key }, body: JSON.stringify(args) }); }
+  catch (e) { throw new Error('NET'); }
+  const j = await r.json().catch(() => null);
+  if (!r.ok) throw new Error((j && (j.message || j.hint)) || ('HTTP ' + r.status));
+  return j;
+}
+const clean = o => JSON.parse(JSON.stringify(o, (k, v) => k.startsWith('_') || v === PH_BLOB ? undefined : v));
+const sig = o => { const s = JSON.stringify(o); let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return s.length + ':' + h; };
+const userDoc = u => ({ u: u.u, name: u.name, code: u.code || nameCode(u.name), role: u.role });
+const photoDoc = p => ({ id: p.id, visitId: p.visitId, caption: p.caption || '', at: p.at || 0, by: p.by || '', driveId: cloud.drive[p.id] || '' });
+function sharedSettings() { const o = {}; SHARED_KEYS.forEach(k => o[k] = settings[k] ?? null); return o; }
+function canEdit(v) { return !v || !me || me.role === 'admin' || !v.createdBy || v.createdBy === me.name; }
+function mergeMe(d) {          // user record from the database → this device (keeps the password for offline login)
+  let u = findUser(d.u);
+  if (!u) { u = { u: d.u }; settings.users.push(u); }
+  Object.assign(u, userDoc(d)); if (d.hash) { u.salt = d.salt; u.hash = d.hash; }
+  cloud.pushed['user:' + u.u] = sig(userDoc(u)); saveCloud(); saveSettings();
+  return u;
+}
+async function localDocs() {
+  const out = [], unsavedIds = new Set(visits.filter(v => v.unsaved).map(v => v.id));
+  for (const v of visits) if (!v.unsaved) out.push({ kind: 'visit', id: v.id, data: clean(v), at: v.updatedAt || 0 });
+  for (const f of folders) out.push({ kind: 'folder', id: f.id, data: clean(f), at: f.updatedAt || 0 });
+  for (const u of settings.users) out.push({ kind: 'user', id: u.u, data: userDoc(u), extra: u._pw ? { salt: u.salt, hash: u.hash } : null, ref: u });
+  if (me?.role === 'admin') out.push({ kind: 'settings', id: 'main', data: sharedSettings() });
+  for (const p of await DB.all('photos')) if (!unsavedIds.has(p.visitId)) out.push({ kind: 'photo', id: p.id, data: photoDoc(p), rec: p });
+  return out;
+}
+async function fetchDrivePhoto(pid) {
+  const fid = cloud.drive[pid];
+  if (!fid || !navigator.onLine || !settings.syncUrl) return null;
+  const j = await post({ action: 'get', fileId: fid });
+  const bin = atob(j.data), a = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+  return new Blob([a], { type: j.mime || 'image/jpeg' });
+}
+async function cloudPush(token) {
+  const docs = await localDocs(), have = new Set(docs.map(d => d.kind + ':' + d.id)), send = [];
+  for (const d of docs) {
+    const key = d.kind + ':' + d.id;
+    if (cloud.pushed[key] === sig(d.data) && !d.extra) continue;
+    if (d.kind === 'settings' && !cloud.linked) continue;
+    if (d.kind === 'photo' && !d.data.driveId) {          // upload the picture to Google Drive first
+      if (!settings.syncUrl || !d.rec.blob) continue;
+      try { const r = await post({ action: 'put', id: d.id, mime: d.rec.blob.type || 'image/jpeg', data: await b64(d.rec.blob) }); cloud.drive[d.id] = r.fileId; d.data.driveId = r.fileId; await saveCloud(); }
+      catch (e) { continue; }
+    }
+    send.push({ kind: d.kind, id: d.id, data: d.extra ? { ...d.data, ...d.extra } : d.data, updated_at: d.at || Date.now(), deleted: false, _key: key, _sig: sig(d.data), _ref: d.ref });
+  }
+  for (const key of Object.keys(cloud.pushed)) {        // deleted on this device
+    if (have.has(key)) continue;
+    const [kind, ...rest] = key.split(':'), id = rest.join(':');
+    if (kind === 'settings') continue;
+    send.push({ kind, id, data: {}, updated_at: Date.now(), deleted: true, _key: key, _sig: null });
+  }
+  for (let i = 0; i < send.length; i += 40) {
+    const part = send.slice(i, i + 40);
+    const r = await rpc('sv_push', { p_token: token, p_docs: part.map(({ _key, _sig, _ref, ...x }) => x) });
+    const rej = new Set((r.rejected || []).map(x => x.kind + ':' + x.id));
+    for (const x of part) {
+      if (rej.has(x._key)) { cloud.force[x._key] = 1; cloud.seq = 0; continue; }
+      if (x.deleted) delete cloud.pushed[x._key]; else cloud.pushed[x._key] = x._sig;
+      if (x._ref && x._ref._pw) { delete x._ref._pw; await DB.put('settings', settings, 'main'); }
+    }
+    await saveCloud();
+  }
+  cloudPending = 0;
+  return send.length;
+}
+async function cloudPull(token) {
+  const r = await rpc('sv_pull', { p_token: token, p_since: cloud.seq || 0 });
+  let changed = false, needPhotos = false;
+  const firstLink = !cloud.linked;
+  if (firstLink) {          // this device joins the shared database: use the shared users and settings
+    const remoteUsers = new Set(r.docs.filter(d => d.kind === 'user' && !d.deleted).map(d => d.id));
+    settings.users = settings.users.filter(u => remoteUsers.has(u.u));
+    Object.keys(cloud.pushed).filter(k => k.startsWith('user:') && !remoteUsers.has(k.slice(5))).forEach(k => delete cloud.pushed[k]);
+  }
+  for (const d of r.docs) {
+    const key = d.kind + ':' + d.id;
+    if (d.kind === 'visit') {
+      const v = visits.find(x => x.id === d.id);
+      const dirty = v && cloud.pushed[key] !== sig(clean(v)) && !cloud.force[key];
+      if (d.deleted) { if (v && !dirty) { visits = visits.filter(x => x !== v); await DB.del('visits', v.id); if (active === 'doc:' + v.id) { tabs = tabs.filter(t => t !== active); active = 'list'; } changed = true; } delete cloud.pushed[key]; continue; }
+      if (dirty && (v.updatedAt || 0) >= d.updated_at) continue;
+      if (v && cur === v && editMode && !cloud.force[key]) continue;
+      if (v) { Object.keys(v).forEach(k => delete v[k]); Object.assign(v, d.data); await DB.put('visits', v); }
+      else { visits.push(d.data); await DB.put('visits', d.data); learn(d.data); }
+      cloud.pushed[key] = sig(clean(d.data)); changed = true;
+    } else if (d.kind === 'folder') {
+      const f = folders.find(x => x.id === d.id);
+      const dirty = f && cloud.pushed[key] !== sig(clean(f)) && !cloud.force[key];
+      if (d.deleted) { if (f && !dirty) { folders = folders.filter(x => x !== f); changed = true; } delete cloud.pushed[key]; continue; }
+      if (dirty && (f.updatedAt || 0) >= d.updated_at) continue;
+      if (f) { Object.keys(f).forEach(k => delete f[k]); Object.assign(f, d.data); } else folders.push(d.data);
+      cloud.pushed[key] = sig(clean(d.data)); changed = true;
+    } else if (d.kind === 'photo') {
+      const p = await DB.get('photos', d.id);
+      if (d.deleted) { if (p) { await DB.del('photos', d.id); delete photoCache[d.id]; if (urls[d.id]) { URL.revokeObjectURL(urls[d.id]); delete urls[d.id]; } changed = true; } delete cloud.pushed[key]; continue; }
+      if (p && cloud.pushed[key] && cloud.pushed[key] !== sig(photoDoc(p)) && !cloud.force[key]) continue;
+      cloud.drive[d.id] = d.data.driveId;
+      const rec = { id: d.id, visitId: d.data.visitId, caption: d.data.caption, at: d.data.at, by: d.data.by, blob: p?.blob || null };
+      await DB.put('photos', rec);
+      if (photoCache[d.id]) Object.assign(photoCache[d.id], { visitId: rec.visitId, caption: rec.caption, at: rec.at, by: rec.by });
+      if (!rec.blob) needPhotos = true;
+      cloud.pushed[key] = sig(photoDoc(rec)); changed = true;
+    } else if (d.kind === 'user') {
+      const u = findUser(d.id);
+      if (d.deleted) { if (u) settings.users = settings.users.filter(x => x !== u); delete cloud.pushed[key]; changed = true; continue; }
+      if (u && cloud.pushed[key] && cloud.pushed[key] !== sig(userDoc(u)) && !cloud.force[key]) continue;
+      if (u) { Object.assign(u, userDoc(d.data)); if (d.data.hash) { u.salt = d.data.salt; u.hash = d.data.hash; } else if (u.u !== me?.u) { delete u.salt; delete u.hash; } }
+      else settings.users.push({ ...userDoc(d.data), ...(d.data.hash ? { salt: d.data.salt, hash: d.data.hash } : {}) });
+      cloud.pushed[key] = sig(userDoc(d.data)); changed = true;
+    } else if (d.kind === 'settings') {
+      if (!firstLink && cloud.pushed[key] && cloud.pushed[key] !== sig(sharedSettings()) && !cloud.force[key]) continue;
+      SHARED_KEYS.forEach(k => { if (d.data[k] !== undefined && d.data[k] !== null) settings[k] = d.data[k]; });
+      cloud.pushed[key] = sig(sharedSettings()); changed = true;
+    }
+    delete cloud.force[key];
+  }
+  if (r.me) {                   // my own name / role may have been changed by the admin
+    mergeMe(r.me);
+    if (me && (me.role !== r.me.role || me.name !== r.me.name)) { me.role = r.me.role; me.name = r.me.name; afterLogin(); }
+  }
+  cloud.seq = r.seq; cloud.linked = true; await saveCloud();
+  if (changed) { visits.sort((a, b) => b.updatedAt - a.updatedAt); await DB.put('settings', folders.map(f => ({ ...f })), 'folders'); await DB.put('settings', settings, 'main'); }
+  return { changed, needPhotos };
+}
+let dlBusy = false;
+async function downloadMissingPhotos() {        // keep a copy of every photo on this device, for offline use
+  if (dlBusy) return; dlBusy = true;
+  try {
+    for (const p of await DB.all('photos')) {
+      if (p.blob || !cloud.drive[p.id] || !navigator.onLine) continue;
+      const b = await fetchDrivePhoto(p.id).catch(() => null); if (!b) continue;
+      p.blob = b; await DB.put('photos', p);
+      if (photoCache[p.id]) { photoCache[p.id].blob = b; if (urls[p.id]) { URL.revokeObjectURL(urls[p.id]); delete urls[p.id]; } }
+    }
+  } finally { dlBusy = false; }
+  if (!editMode) refreshActive();
+}
+async function cloudSync(manual = false) {
+  if (!cloudOn() || cloudBusy || !me) return;
+  if (!navigator.onLine) { if (manual) toast(T('noNet')); return; }
+  const token = getToken();
+  if (!token) { if (manual || !cloudWarned) { cloudWarned = true; toast(T('cloudRelogin'), 5000); } return; }
+  cloudBusy = true;
+  try {
+    await flushSave();
+    let res = { changed: false };
+    if (!cloud.linked) res = await cloudPull(token);        // joining: take the shared data first
+    await cloudPush(token);
+    const r2 = await cloudPull(token);
+    if ((res.changed || r2.changed) && !editMode && !document.querySelector('dialog[open]')) refreshActive();
+    if (res.needPhotos || r2.needPhotos) downloadMissingPhotos();
+  } catch (e) {
+    if (e.message === 'SESSION') { setToken(null); toast(T('sessionEnded'), 5000); cloudBusy = false; $('mLogout').click(); return; }
+    if (e.message !== 'NET' && manual) toast(T('cloudFail', e.message), 5000);
+  } finally { cloudBusy = false; updateNet(); }
+}
 
 /* ---------- Start ---------- */
 (async function init() {
   await DB.open();
   settings = { ...settings, ...(await DB.get('settings', 'main') || {}) };
   folders = (await DB.get('settings', 'folders')) || [];
+  cloud = { ...cloud, ...(await DB.get('settings', 'cloud') || {}) };
   await loadVisits();
   // upgrade older records
   for (const v of [...visits].reverse()) {
@@ -2432,6 +2759,7 @@ $('mPass').onclick = async () => {
   updateNet();
   navigator.storage?.persist?.();
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+  await cloudSync();
   syncAll();
 })();
 </script>
