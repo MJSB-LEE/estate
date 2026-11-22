@@ -1,8 +1,8 @@
 // Service worker: simpan salinan app supaya boleh buka tanpa internet.
 // Tukar nombor versi bila anda kemas kini fail, supaya telefon ambil versi baru.
-const CACHE = 'lawatan-ladang-v21';
+const CACHE = 'lawatan-ladang-v23';
 const ASSETS = [
-  './', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './logo.jpg',
+  './', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './favicon.png', './logo.jpg',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
 ];
 

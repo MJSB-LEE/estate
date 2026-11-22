@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#1e40af">
-<title>Lawatan Ladang</title>
+<title>Site Visit</title>
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
@@ -276,6 +277,13 @@
   .role-badge{border:1.5px solid #fff;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:800;letter-spacing:.5px}
   .tb-user{font-size:14px;white-space:nowrap}
   .tb-btn{background:rgba(255,255,255,.15);color:#fff;font-size:13px;padding:6px 12px;white-space:nowrap}
+  body.ro [data-go=new], body.ro #phNew, body.ro #btnEdit, body.ro #btnDelVisit, body.ro #phCam, body.ro #phAdd, body.ro #phEditB, body.ro #phDelF{display:none!important}
+  .side-lang-wrap{display:none}
+  body.phone .side-lang-wrap{display:block}
+  .side-lang{float:none;display:inline-flex;align-self:flex-start;margin:4px 12px 12px}
+  .side-lang button{padding:6px 18px;font-size:14px}
+  body.phone .top .lang{display:none}
+  body.phone a.portal-link{display:none!important}
   a.portal-link{display:inline-flex;align-items:center;gap:4px;text-decoration:none;border-radius:8px;font-weight:600}
   .login-portal{position:absolute;top:16px;left:16px;color:#fff;background:rgba(255,255,255,.15);padding:8px 14px;font-size:14px}
   .login-portal:hover{background:rgba(255,255,255,.25)}
@@ -404,6 +412,9 @@
     <a data-nav="report">📊 <span data-t="monthly"></span></a>
     <div class="sec" data-t="navSystem"></div>
     <a data-nav="settings">⚙️ <span data-t="settings"></span></a>
+    <a data-nav="audit">🕵️ <span data-t="auditLog"></span></a>
+    <div class="side-lang-wrap"><div class="sec" data-t="language"></div>
+      <div class="lang login-lang side-lang"><button type="button" data-lang="ms">BM</button><button type="button" data-lang="en">EN</button></div></div>
   </nav>
 
   <div class="main">
@@ -491,6 +502,24 @@
       </section>
 
       <!-- SETTINGS -->
+      <section class="page" id="pg-audit">
+        <div class="card">
+          <div class="bar" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end">
+            <div><label class="f" data-t="auFrom"></label><input class="f-in" type="date" id="auFrom"></div>
+            <div><label class="f" data-t="auTo"></label><input class="f-in" type="date" id="auTo"></div>
+            <div><label class="f" data-t="cUser"></label><select class="f-in" id="auUser"></select></div>
+            <div><label class="f" data-t="auAction"></label><select class="f-in" id="auAct"></select></div>
+            <div><label class="f" data-t="search"></label><input class="f-in" id="auQ" type="search"></div>
+          </div>
+          <div class="row-actions" style="margin:12px 0;gap:10px;flex-wrap:wrap">
+            <button class="btn-ghost" id="auReload">🔄 <span data-t="refresh"></span></button>
+            <button class="btn-ghost" id="auCsv">⬇ CSV</button>
+            <span class="muted small" id="auCount"></span><span class="muted small" id="auNote"></span>
+          </div>
+          <div style="overflow:auto"><table class="tbl" id="auTbl"></table></div>
+        </div>
+      </section>
+
       <section class="page set" id="pg-settings">
         <div class="stabs" id="stabs">
           <button data-st="general" data-t="setGeneral"></button>
@@ -546,7 +575,7 @@
               <div><label class="f req" data-t="fullName"></label><input class="f-in" id="nuName" autocomplete="off"></div>
               <div><label class="f req" data-t="password"></label><input class="f-in" id="nuPass" type="password" autocomplete="new-password"></div>
               <div><label class="f" data-t="docCode"></label><input class="f-in" id="nuCode" maxlength="6" style="text-transform:uppercase" data-tp="docCodePh"></div>
-              <div><label class="f" data-t="role"></label><select class="f-in" id="nuRole"><option value="staff" data-t="roleStaff"></option><option value="admin" data-t="roleAdmin"></option></select></div>
+              <div><label class="f" data-t="role"></label><select class="f-in" id="nuRole"><option value="staff" data-t="role_staff"></option><option value="manager" data-t="role_manager"></option><option value="viewer" data-t="role_viewer"></option><option value="admin" data-t="role_admin"></option></select></div>
               <div style="display:flex;align-items:end"><button class="btn" id="nuAdd" style="width:100%" data-t="addUser"></button></div>
             </div>
             <p class="hint" data-t="usersHint"></p>
@@ -623,6 +652,7 @@
               <div><label class="f req" for="tarikh" data-t="date"></label><input class="f-in" type="date" id="tarikh"></div>
               <div><label class="f req" for="ladang" data-t="estate"></label>
                 <select class="f-in" id="ladang"></select><datalist id="dlEstates"></datalist></div>
+              <div><label class="f" for="printName" data-t="printName"></label><select class="f-in" id="printName"></select></div>
               <div style="display:none"><label class="f req" for="pegawai" data-t="officers"></label>
                 <div class="f-in chips" id="offBox"><span id="offChips" style="display:contents"></span><input id="pegawai" list="dlOfficers" data-tp="officerPh" autocomplete="off"></div>
                 <datalist id="dlOfficers"></datalist></div>
@@ -817,7 +847,18 @@ const STR = {
     byEstate2: '🗂 Gambar ikut ladang', clickEstate: 'Klik ladang untuk lihat lawatan dan gambarnya.', allEstatesCrumb: '📂 Semua ladang',
     nVisits: n => `${n} lawatan`, estatePhotos: e => `🗂 Lawatan ${e}`, clickFolder: 'Klik lawatan untuk lihat atau tambah gambar.', addPhotos: '⬆ Tambah gambar', takePhoto: '📷 Ambil gambar',
     noEstatesYet: 'Belum ada lawatan.', noPhotoInFolder: 'Tiada gambar dalam lawatan ini.', photoDeleted: 'Gambar dipadam.',
-    userLbl: 'Pengguna', changePassShort: 'Tukar kata laluan', logoutShort: 'Log keluar',
+    userLbl: 'Pengguna', changePassShort: 'Tukar kata laluan', logoutShort: 'Log keluar', language: 'Bahasa', exitQ: 'Keluar dari Site Visit?',
+    role_admin: 'Admin', role_manager: 'Pengurus', role_staff: 'Staf', role_viewer: 'Pemerhati', status: 'Status', you: 'anda',
+    activeLbl: 'Aktif', disabledLbl: 'Dinyahaktif', disableUser: 'Nyahaktif', enableUser: 'Aktifkan', disableQ: u => `Nyahaktifkan ${u}? Dia tidak boleh log masuk, tetapi lawatannya kekal.`,
+    userDisabled: 'Akaun ini telah dinyahaktifkan. Hubungi admin.', notOwnRole: 'Anda tidak boleh tukar peranan sendiri.', viewOnly: 'Akaun anda hanya untuk melihat.', saved: 'Disimpan ✓',
+    printName: 'Nama dicetak di laporan', noNameOpt: '— kosong (tiada nama) —',
+    auditLog: 'Log audit', auFrom: 'Dari', auTo: 'Hingga', auAction: 'Tindakan', auRef: 'Rujukan', auDetail: 'Butiran', auDevice: 'Peranti', auTime: 'Masa',
+    allUsers: 'Semua pengguna', allActions: 'Semua tindakan', refresh: 'Muat semula', search: 'Cari', loading: 'Memuat…', nRows: n => `${n} rekod`, noRows: 'Tiada rekod.',
+    notSentYet: 'belum dihantar', auOffline: 'Tiada internet: hanya rekod dari peranti ini ditunjukkan.',
+    au_login: 'Log masuk', au_logout: 'Log keluar', au_deleted: 'Lawatan dipadam', au_settings: 'Tetapan diubah', au_userAdded: 'Pengguna ditambah', au_userEdited: 'Pengguna diubah',
+    au_userDisabled: 'Pengguna dinyahaktif', au_userEnabled: 'Pengguna diaktifkan', au_userDeleted: 'Pengguna dipadam', au_passReset: 'Kata laluan ditetapkan semula',
+    au_folderCreated: 'Folder gambar dibuat', au_folderDeleted: 'Folder gambar dipadam', au_photoDeleted: 'Gambar dipadam', au_rotated: 'Gambar dipusing',
+    au_backup: 'Sandaran dimuat turun', au_restore: 'Sandaran dipulihkan',
     setBackup: 'Sandaran', bkIntro: 'Simpan salinan semua data (lawatan, folder gambar, pengguna, tetapan) dalam satu fail .json di PC anda. Buat sekali seminggu atau sebulan.',
     bkData: 'Muat turun sandaran (data sahaja)', bkFull: 'Muat turun sandaran + gambar',
     bkHintDl: 'Data sahaja = fail kecil; gambar masih selamat dalam Google Drive. "+ gambar" = fail besar, tetapi lengkap walaupun tanpa Google Drive.',
@@ -839,7 +880,7 @@ const STR = {
     newPassQ: 'Kata laluan baru:', passChanged: 'Kata laluan ditukar ✓', resetPass: 'Reset', delUser: 'Padam',
     delUserQ: n => `Padam pengguna ${n}?`, lastAdmin: 'Mesti ada sekurang-kurangnya seorang admin.', userAdded: 'Pengguna ditambah ✓',
     docCode: 'Kod No. Dok', docCodePh: 'cth. AL', setUsers: 'Pengguna & Kata Laluan', role: 'Peranan', roleAdmin: 'Admin', roleStaff: 'Staf', addUser: '+ Tambah Pengguna',
-    usersHint: 'Setiap pengguna ada no. dokumen sendiri: KOD-bil/bulan (cth. AL-1/11, AL-2/11). Admin boleh buka Tetapan; Staf hanya isi lawatan.', cUser: 'Pengguna',
+    usersHint: 'Setiap pengguna ada no. dokumen sendiri: KOD-bil/bulan (cth. AL-1/11). Admin: semua, termasuk Tetapan dan Log audit. Pengurus: lihat dan ubah semua lawatan, laporan bulanan. Staf: lawatan sendiri sahaja. Pemerhati: lihat dan cetak sahaja. Nyahaktif = tidak boleh log masuk, lawatan kekal.', cUser: 'Pengguna',
     setRemember: '"Kekal log masuk"', remYes: 'Dibenarkan', remNo: 'Tidak — log masuk setiap kali buka app',
     officersHint: 'Orang yang ikut lawatan tetapi tidak guna app (cth. pemandu, mekanik). Mereka muncul sebagai pilihan dalam kotak Pegawai. Pengguna sudah ada secara automatik.', titNamePh: 'Tajuk baru', reqNote: 'Wajib diisi', default: 'Asal',
     estNamePh: 'Nama ladang', codePh: 'Kod', offNamePh: 'Nama pegawai', up: 'Naik', down: 'Turun',
@@ -908,7 +949,18 @@ const STR = {
     byEstate2: '🗂 Photos by estate', clickEstate: 'Click an estate to see its visits and photos.', allEstatesCrumb: '📂 All estates',
     nVisits: n => `${n} visit${n === 1 ? '' : 's'}`, estatePhotos: e => `🗂 ${e} visits`, clickFolder: 'Click a visit to see or add photos.', addPhotos: '⬆ Add photos', takePhoto: '📷 Take photo',
     noEstatesYet: 'No visits yet.', noPhotoInFolder: 'No photos in this visit.', photoDeleted: 'Photo deleted.',
-    userLbl: 'User', changePassShort: 'Change password', logoutShort: 'Logout',
+    userLbl: 'User', changePassShort: 'Change password', logoutShort: 'Logout', language: 'Language', exitQ: 'Leave Site Visit?',
+    role_admin: 'Admin', role_manager: 'Manager', role_staff: 'Staff', role_viewer: 'Viewer', status: 'Status', you: 'you',
+    activeLbl: 'Active', disabledLbl: 'Disabled', disableUser: 'Disable', enableUser: 'Enable', disableQ: u => `Disable ${u}? They cannot log in, but their visits stay.`,
+    userDisabled: 'This account is disabled. Please contact the admin.', notOwnRole: 'You cannot change your own role.', viewOnly: 'Your account is view only.', saved: 'Saved ✓',
+    printName: 'Name printed on the report', noNameOpt: '— empty (no name) —',
+    auditLog: 'Audit log', auFrom: 'From', auTo: 'To', auAction: 'Action', auRef: 'Reference', auDetail: 'Detail', auDevice: 'Device', auTime: 'Time',
+    allUsers: 'All users', allActions: 'All actions', refresh: 'Refresh', search: 'Search', loading: 'Loading…', nRows: n => `${n} records`, noRows: 'No records.',
+    notSentYet: 'not sent yet', auOffline: 'No internet: only records from this device are shown.',
+    au_login: 'Logged in', au_logout: 'Logged out', au_deleted: 'Visit deleted', au_settings: 'Settings changed', au_userAdded: 'User added', au_userEdited: 'User changed',
+    au_userDisabled: 'User disabled', au_userEnabled: 'User enabled', au_userDeleted: 'User deleted', au_passReset: 'Password reset',
+    au_folderCreated: 'Photo folder made', au_folderDeleted: 'Photo folder deleted', au_photoDeleted: 'Photo deleted', au_rotated: 'Photo rotated',
+    au_backup: 'Backup downloaded', au_restore: 'Backup restored',
     setBackup: 'Backup', bkIntro: 'Save a copy of all data (visits, photo folders, users, settings) as one .json file on your PC. Do it once a week or once a month.',
     bkData: 'Download backup (data only)', bkFull: 'Download backup + photos',
     bkHintDl: 'Data only = small file; the photos are still safe in Google Drive. "+ photos" = big file, but complete even without Google Drive.',
@@ -930,7 +982,7 @@ const STR = {
     newPassQ: 'New password:', passChanged: 'Password changed ✓', resetPass: 'Reset', delUser: 'Delete',
     delUserQ: n => `Delete user ${n}?`, lastAdmin: 'There must be at least one admin.', userAdded: 'User added ✓',
     docCode: 'Doc no. code', docCodePh: 'e.g. AL', setUsers: 'Users & Passwords', role: 'Role', roleAdmin: 'Admin', roleStaff: 'Staff', addUser: '+ Add User',
-    usersHint: 'Each user has their own doc numbers: CODE-no/month (e.g. AL-1/11, AL-2/11). Admins can open Settings; Staff can only fill in visits.', cUser: 'User',
+    usersHint: 'Each user has their own doc numbers: CODE-no/month (e.g. AL-1/11). Admin: everything, including Settings and the Audit log. Manager: see and change all visits, monthly report. Staff: own visits only. Viewer: look and print only. Disabled = cannot log in, visits stay.', cUser: 'User',
     setRemember: '"Keep me logged in"', remYes: 'Allowed', remNo: 'No — log in every time the app opens',
     officersHint: 'People who join visits but do not use the app (e.g. driver, mechanic). They appear as choices in the Officers box. Users are already included automatically.', titNamePh: 'New title', reqNote: 'Required', default: 'Default',
     estNamePh: 'Estate name', codePh: 'Code', offNamePh: 'Officer name', up: 'Up', down: 'Down',
@@ -1029,7 +1081,21 @@ function assignDocNo(v) {
   v.docNo = `${code}-${(used.length ? Math.max(...used) : 0) + 1}/${mm}`;
 }
 const docLabel = v => v.unsaved ? estDocNo(v) + ' ' + T('est') : (v.docNo || T('draftNo'));
-const savedV = () => visits.filter(v => !v.unsaved);
+const ROLES = ['admin', 'manager', 'staff', 'viewer'];
+const roleLabel = r => T('role_' + (ROLES.includes(r) ? r : 'staff'));
+const CAN = {                       // what each role may do
+  settings: r => r === 'admin',
+  audit: r => r === 'admin',
+  report: r => r !== 'staff',
+  seeAll: r => r !== 'staff',      // staff only see their own visits and photo folders
+  editAll: r => r === 'admin' || r === 'manager',
+  create: r => r !== 'viewer',     // viewer: look and print only
+};
+const can = k => !me || CAN[k](me.role || 'staff');
+const mine = x => !x.createdBy || x.createdBy === me?.name || (x.createdByU && x.createdByU === me?.u);
+const seeIt = x => can('seeAll') || mine(x);
+const savedV = () => visits.filter(v => !v.unsaved && seeIt(v));
+const seeFolders = () => folders.filter(seeIt);
 function estDocNo(v) { const c = { ...v, docNo: '' }; assignDocNo(c); return c.docNo; }
 
 const offName = line => line.split('=')[0].trim();
@@ -1062,7 +1128,7 @@ function fillEstateSelect() {
 
 /* ---------- Navigation & tabs ---------- */
 let tabs = ['home'], active = 'home';
-const PAGE_LABEL = { home: 'home', list: 'visitList', photos: 'photos', report: 'monthly', settings: 'settings', newfolder: 'newFolderTab' };
+const PAGE_LABEL = { home: 'home', list: 'visitList', photos: 'photos', report: 'monthly', settings: 'settings', newfolder: 'newFolderTab', audit: 'auditLog' };
 
 function tabLabel(k) {
   if (k.startsWith('doc:')) { const v = visits.find(x => x.id === k.slice(4)); return !v ? 'Doc' : v.unsaved ? `✚ ${T('newVisitTab')}${v.ladang ? ' · ' + v.ladang : ''}` : `Doc ${docLabel(v)} · ${v.ladang || T('noEstate')}`; }
@@ -1081,9 +1147,28 @@ function renderTabs() {
   document.querySelectorAll('.side a').forEach(a => a.classList.toggle('on', a.dataset.nav === active));
   localStorage.setItem('ll.tabs', JSON.stringify({ tabs, active }));
 }
+let navFromBack = false;
+function navPush(k) {
+  if (navFromBack) return;
+  try { if (history.state?.sv && history.state.k === k) return; history.pushState({ sv: 1, k }, ''); } catch (e) {}
+}
+window.addEventListener('popstate', async e => {
+  if (!me) return;
+  const dlg = document.querySelector('dialog[open]');
+  if (dlg || !$('lb').hidden || $('side').classList.contains('open')) {           // Back closes what is open on top first
+    if (dlg) dlg.close(); if (!$('lb').hidden) closeLB(); $('side').classList.remove('open');
+    history.pushState({ sv: 1, k: active }, ''); return;
+  }
+  const st = e.state;
+  if (st && st.sv && st.k && st.k !== 'root') { navFromBack = true; try { await go(st.k); } finally { navFromBack = false; } return; }
+  if (confirm(T('exitQ'))) history.back();             // left the first page: ask before leaving Site Visit
+  else history.pushState({ sv: 1, k: active }, '');
+});
 async function go(k) {
-  if (k === 'new') return createVisit();
-  if (k === 'settings' && me && me.role !== 'admin') k = 'home';
+  if (k === 'new') { if (!can('create')) return toast(T('viewOnly')); return createVisit(); }
+  if (k === 'settings' && !can('settings')) k = 'home';
+  if (k === 'audit' && !can('audit')) k = 'home';
+  if (k === 'report' && !can('report')) k = 'home';
   if (isPhone && !PHONE_OK(k)) k = 'photos';
   if (k.startsWith('doc:') && !visits.some(v => v.id === k.slice(4))) k = 'list';
   await flushSave();
@@ -1100,8 +1185,9 @@ async function go(k) {
   if (k === 'newfolder') renderNewFolder();
   if (k === 'report') renderReport();
   if (k === 'settings') loadSettingsForm();
+  if (k === 'audit') renderAudit();
   if (k.startsWith('doc:')) await openVisit(k.slice(4));
-  renderTabs();
+  renderTabs(); navPush(k);
 }
 async function closeTab(k) {
   const v = k.startsWith('doc:') && visits.find(x => x.id === k.slice(4));
@@ -1169,6 +1255,10 @@ function fillSelect(sel, items, allLabel, keep = true) {
 }
 const monthsAvail = () => [...new Set([todayKL().slice(0, 7), ...savedV().map(monthOf).filter(Boolean)])].sort().reverse();
 const uniq = arr => [...new Set(arr.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+const estOrder = list => {          // estates in the Settings ▲▼ order, any others after (A–Z)
+  const set = estateNames(), extra = uniq(list.filter(x => !set.includes(x)));
+  return [...set.filter(x => list.includes(x) || list === set), ...extra];
+};
 
 /* ---------- Home ---------- */
 function renderHome() {
@@ -1189,7 +1279,7 @@ function renderList() {
     $('lMonth').value = todayKL().slice(0, 7);
     listInit = true;
   } else fillSelect($('lMonth'), monthsAvail().map(m => [m, monthLabel(m)]), T('allMonths'));
-  fillSelect($('lEstate'), uniq(savedV().map(v => v.ladang)).map(x => [x, x]), T('allEstates'));
+  fillSelect($('lEstate'), estOrder(savedV().map(v => v.ladang).filter(Boolean)).map(x => [x, x]), T('allEstates'));
   fillSelect($('lOfficer'), uniq(savedV().map(v => v.createdBy)).map(x => [x, x]), T('allOfficers'));
   fillSelect($('lStatus'), ['draft', 'pending', 'synced'].map(s => [s, T(s)]), T('allStatus'));
   const q = $('lSearch').value.trim().toLowerCase();
@@ -1216,14 +1306,14 @@ async function renderGallery() {
   $('phNew').textContent = '+ ' + T('newFolderTab');
   const okShow = f => phShow === 'all' || (phShow === 'waiting' ? isWait(f) : !isWait(f));
   // every visit = an attached folder; every loose folder = waiting
-  const ALL = [...folders, ...savedV()];
+  const ALL = [...seeFolders(), ...savedV()];
   for (const f of ALL) for (const pid of f.photoIds) await getPhoto(pid);
   if (phOpen && !ALL.some(f => f.id === phOpen)) phOpen = null;
   $('phMsg').innerHTML = phMsg ? `<p style="color:var(--green);font-size:13px;margin:0 0 10px">✔ ${esc(phMsg)}</p>` : '';
   const crumbs = $('phCrumbs'), main = $('phMain'), panel = $('phPanel');
   if (!phEstate) {
     crumbs.innerHTML = ''; panel.innerHTML = '';
-    const ests = uniq([...estateNames(), ...ALL.map(f => f.ladang)]);
+    const ests = [...estateNames(), ...uniq(ALL.map(f => f.ladang).filter(x => !estateNames().includes(x)))];
     const tiles = ests.map(e => {
       const F = ALL.filter(f => f.ladang === e && okShow(f)), w = F.filter(isWait).length, n = F.reduce((a, f) => a + fcount(f), 0);
       return `<div class="etile" data-e="${esc(e)}"><div class="eic">📂</div><div><b>${esc(e)}</b>
@@ -1265,7 +1355,7 @@ async function renderGallery() {
       $('phDelF').onclick = async () => {
         if (!confirm(T('delFolderQ'))) return;
         for (const pid of of.photoIds) { await DB.del('photos', pid); delete photoCache[pid]; }
-        if (of.syncedAt) queueTrash(of.id);
+        if (of.syncedAt) queueTrash(of.id); audit('folderDeleted', of.docNo, of.photoIds.length);
         folders = folders.filter(f => f !== of); await saveFolders(); phOpen = null; renderGallery();
       };
       if (phEdit) {
@@ -1333,7 +1423,7 @@ $('nfSave').onclick = async () => {
     await DB.put('photos', rec); photoCache[rec.id] = rec; f.photoIds.push(rec.id);
   }
   await saveFolders();
-  const n = nf.pick.length; nfReset();
+  const n = nf.pick.length; nfReset(); audit('folderCreated', f.docNo, n);
   updateNet();
   phEstate = f.ladang; phOpen = f.id; phShow = 'all'; phMsg = T('folderSaved', f.docNo) + (n ? ' ' + T('nPhotos', n) : '');
   tabs = tabs.filter(t => t !== 'newfolder'); await go('photos');
@@ -1352,7 +1442,10 @@ function reportData(ym) {
         (key === 'ladang' ? [v.createdBy] : [v.ladang]).forEach(o => o && r.other.add(o)); r.docs.push(docLabel(v));
       });
     });
-    return [...m.values()].sort((a, b) => a.name.localeCompare(b.name));
+    const rows = [...m.values()];
+    if (key !== 'ladang') return rows.sort((a, b) => a.name.localeCompare(b.name));
+    const order = estOrder(rows.map(r => r.name));              // estates in the Settings order
+    return rows.sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
   };
   return { mv, est: group('ladang'), off: group('pegawai') };
 }
@@ -1441,7 +1534,9 @@ $('btnRepPdf').onclick = async () => {
 };
 
 /* ---------- Visit (doc) ---------- */
-function logEv(v, what, n) { (v.log ||= []).push({ what, t: Date.now(), by: meName(), n }); }
+function logEv(v, what, n) { (v.log ||= []).push({ what, t: Date.now(), by: meName(), n }); if (what !== 'synced') audit(what, docLabel(v), n ?? ''); }
+const evText = (what, n) => what === 'photos' ? T('evPhotos', n) : what === 'detached' ? T('evDetached', n)
+  : (STR.en['ev' + what[0].toUpperCase() + what.slice(1)] !== undefined ? T('ev' + what[0].toUpperCase() + what.slice(1)) : T('au_' + what));
 let editMode = false, editDirty = false;
 function setMode(edit) {
   if (cur?.unsaved) edit = true;
@@ -1464,7 +1559,7 @@ function renderSheets(v, sh) {
     const d = document.createElement('div'); d.className = 'sheet';
     const head = (pg === 0 || !firstOnly) ? `
       <div class="sh-head"><img src="${logo}"><div class="sh-rev">${esc(settings.rev)}</div>
-        <div class="sh-title">${esc(title)}</div><div class="sh-off">${esc(offsOf(v).join(', ') || v.createdBy || '')}</div></div>
+        <div class="sh-title">${esc(title)}</div><div class="sh-off">${esc(v.noName ? '' : (offsOf(v).join(', ') || v.createdBy || ''))}</div></div>
       <div class="sh-meta"><div>${L.loc}: ${esc(v.ladang)}<br>${L.date}: ${fmtDate(v.tarikh)}</div><div class="no">No: ${esc(v.docNo || '')}</div></div>` : '';
     let grid = '';
     for (let i = pg * 4; i < Math.min(ids.length, pg * 4 + 4); i++) {
@@ -1481,7 +1576,7 @@ function renderSheets(v, sh) {
 let folders = [];
 const saveFolders = () => { scheduleCloud(); return DB.put('settings', folders.map(f => ({ ...f })), 'folders'); };
 const saveObj = v => v.isFolder ? saveFolders() : DB.put('visits', v);
-const waitingFor = e => folders.filter(f => f.ladang === e).sort((a, b) => b.createdAt - a.createdAt);
+const waitingFor = e => seeFolders().filter(f => f.ladang === e).sort((a, b) => b.createdAt - a.createdAt);
 function folderRefAuto() {
   const code = userCode({ createdByU: me?.u, createdBy: meName() }), mm = String(+todayKL().slice(5, 7)), key = code + '/' + todayKL().slice(0, 7);
   return { key, ref: `F-${code}-${((settings.fseq || {})[key] || 0) + 1}/${mm}` };
@@ -1683,7 +1778,7 @@ function renderView() {
   const ids = v.photoIds;
   // timeline
   const dot = { created: '', photos: 'b', pdf: 'b', print: 'b', done: 'a', synced: 'g', edited: '' };
-  const label = e => e.what === 'photos' ? T('evPhotos', e.n) : e.what === 'detached' ? T('evDetached', e.n) : T('ev' + e.what[0].toUpperCase() + e.what.slice(1));
+  const label = e => evText(e.what, e.n);
   $('timeline').innerHTML = (v.log || []).map(e => `<li><span class="dot ${dot[e.what] || ''}"></span><b>${esc(label(e))}</b><span>${esc(e.by || '')}</span><span class="muted small">${fmtStamp(e.t)}</span></li>`).join('');
   // photos
   $('vCount').textContent = ids.length ? `(${ids.length})` : '';
@@ -1708,7 +1803,7 @@ $('btnView').onclick = async () => {
     cur.unsaved = false; cur.docNo = ''; assignDocNo(cur);
     cur.createdAt = Date.now(); cur.log = [{ what: 'created', t: cur.createdAt, by: meName() }, ...(cur.log || []).filter(e => e.what !== 'created')];
     cur.status = 'pending'; cur.updatedAt = Date.now();
-    await DB.put('visits', cur); editDirty = false;
+    await DB.put('visits', cur); editDirty = false; audit('created', cur.docNo, cur.ladang);
     toast(T('savedAs', cur.docNo));
     renderDocHead(); renderTabs(); updateNet();
   }
@@ -1763,12 +1858,25 @@ async function openVisit(id) {
   for (const pid of cur.photoIds) await getPhoto(pid);
   cur.photoIds = cur.photoIds.filter(pid => photoCache[pid]);
   $('tarikh').value = cur.tarikh; $('pegawai').value = ''; renderChips(); fillEstateSelect(); $('nota').value = cur.note || '';
+  fillPrintName();
   $('saveState').textContent = '';
   fillTitleSelect(); fillDatalists(); renderDocHead(); renderPhotos();
   selPh.clear();
   editMode = false; setMode(!cur.ladang.trim() && !cur.photoIds.length);
   $('newPhDet').open = false; renderAttach();
 }
+function fillPrintName() {          // the name printed under the title: me (default), another user, or nothing
+  const sel = $('printName'), names = [...new Set([meName(), ...settings.users.filter(u => !u.disabled).map(u => u.name)].filter(Boolean))];
+  const curName = offsOf(cur)[0] || cur.createdBy || meName();
+  if (curName && !names.includes(curName)) names.unshift(curName);
+  sel.innerHTML = names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('') + `<option value="__none">${esc(T('noNameOpt'))}</option>`;
+  sel.value = cur.noName ? '__none' : curName;
+}
+$('printName').onchange = e => {
+  const val = e.target.value;
+  if (val === '__none') { cur.noName = true; setOfficers(cur, []); } else { cur.noName = false; setOfficers(cur, [val]); }
+  markChanged();
+};
 async function createVisit() {
   await flushSave();
   const open = visits.find(v => v.unsaved && v.createdByU === (me?.u || ''));
@@ -1960,12 +2068,12 @@ async function rotatePhoto(pid) {
     (cur.attached || []).forEach(a => { const k = a.photoIds.indexOf(pid); if (k >= 0) a.photoIds[k] = np.id; });
     if (selPh.has(pid)) { selPh.delete(pid); selPh.add(np.id); }
     await DB.del('photos', pid); delete photoCache[pid]; if (urls[pid]) { URL.revokeObjectURL(urls[pid]); delete urls[pid]; }
-    markChanged(); renderPhotos(); renderView?.();
+    markChanged(); renderPhotos(); renderView?.(); audit('rotated', docLabel(cur));
   } finally { rotBusy = false; }
 }
 async function removePhoto(pid) {
   if (!confirm(T('delPhotoQ'))) return;
-  cur.photoIds = cur.photoIds.filter(x => x !== pid);
+  cur.photoIds = cur.photoIds.filter(x => x !== pid); audit('photoDeleted', docLabel(cur));
   await DB.del('photos', pid);
   if (urls[pid]) URL.revokeObjectURL(urls[pid]); delete urls[pid]; delete photoCache[pid];
   markChanged(); renderPhotos();
@@ -2077,7 +2185,7 @@ async function buildPDF(v) {
       doc.setFont('Helvetica', 'bold'); doc.setFontSize(14);
       doc.text(title, (W - doc.getTextWidth(title)) / 2, M);
       doc.setFont('Helvetica', 'normal'); doc.setFontSize(12);
-      const offTxt = offsOf(v).join(', ');
+      const offTxt = v.noName ? '' : offsOf(v).join(', ');
       let fs = 12; doc.setFontSize(fs);
       while (doc.getTextWidth(offTxt) > W - 2 * M - 56 && fs > 7) doc.setFontSize(--fs);
       doc.text(offTxt, (W - doc.getTextWidth(offTxt)) / 2, M + 8);
@@ -2149,7 +2257,7 @@ $('btnDelVisit').onclick = async () => {
   if (!canEdit(cur)) return toast(T('notYours'));
   if (!confirm(T('delVisitQ', `${docLabel(cur)} · ${cur.ladang || T('noEstate')}`))) return;
   for (const pid of cur.photoIds) { await DB.del('photos', pid); delete photoCache[pid]; }
-  await DB.del('visits', cur.id);
+  await DB.del('visits', cur.id); audit('deleted', docLabel(cur), cur.ladang || '');
   visits = visits.filter(v => v.id !== cur.id);
   const k = 'doc:' + cur.id; cur = null; saveTimer = null;
   tabs = tabs.filter(t => t !== k); if (!tabs.length) tabs = [typeof isPhone !== 'undefined' && isPhone ? 'photos' : 'home'];
@@ -2290,7 +2398,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) clou
 /* ---------- Settings page ---------- */
 function applyBrand() {
   $('appTitle').textContent = `${settings.company ? settings.company + ' — ' : ''}${settings.lang === 'en' ? 'SITE VISIT' : 'LAWATAN LADANG'}`;
-  document.title = settings.lang === 'en' ? 'Site Visit' : 'Lawatan Ladang';
+  document.title = 'Site Visit';
   const img = $('logoImg'); img.parentNode.style.display = ''; img.src = settings.logo || DEFAULT_LOGO;
   const pv = $('setLogoPrev'); if (settings.logo) { pv.src = settings.logo; pv.style.display = ''; } else pv.style.display = 'none';
 }
@@ -2318,7 +2426,7 @@ $('btnSaveSettings').onclick = async () => {
   const seen = new Set();
   settings.estates = estEdit.filter(e => e && !seen.has(e.toLowerCase()) && seen.add(e.toLowerCase()));
   settings.syncUrl = $('syncUrl').value.trim(); settings.syncKey = $('syncKey').value.trim();
-  await saveSettings(); applyBrand(); fillDatalists(); toast(T('settingsSaved')); syncAll();
+  await saveSettings(); applyBrand(); fillDatalists(); toast(T('settingsSaved')); audit('settings'); syncAll();
 };
 $('btnTestSync').onclick = async () => {
   const old = { url: settings.syncUrl, key: settings.syncKey };
@@ -2392,6 +2500,17 @@ $('addEst').onclick = () => {
 };
 [['addEstName', 'addEst']].forEach(([i, b]) => $(i).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $(b).click(); } }));
 
+$('auReload').onclick = () => renderAudit(true);
+['auFrom', 'auTo'].forEach(id => $(id).onchange = () => renderAudit(true));
+['auUser', 'auAct'].forEach(id => $(id).onchange = () => renderAudit(false));
+$('auQ').oninput = () => renderAudit(false);
+$('auCsv').onclick = () => {
+  const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const lines = [[T('auTime'), T('username'), T('fullName'), T('auAction'), T('auRef'), T('auDetail'), T('auDevice')].map(q).join(',')]
+    .concat(auditView.map(x => [fmtStamp(x.at), x.u, x.name, evText(x.action, x.detail), x.ref, x.detail, x.device].map(q).join(',')));
+  downloadBlob(new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv' }), `site-visit-audit-${$('auFrom').value}_${$('auTo').value}.csv`);
+};
+
 /* ---------- Backup (.json) ---------- */
 async function makeBackup(withPhotos) {
   toast(T('bkMaking'));
@@ -2410,7 +2529,7 @@ async function makeBackup(withPhotos) {
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
   a.download = name; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-  localStorage.setItem('ll.lastBackup', Date.now()); showSetTab('backup'); toast(T('bkDone'));
+  localStorage.setItem('ll.lastBackup', Date.now()); showSetTab('backup'); toast(T('bkDone')); audit('backup', name);
 }
 async function restoreBackup(file) {
   let d; try { d = JSON.parse(await file.text()); } catch (e) { d = null; }
@@ -2446,7 +2565,7 @@ async function restoreBackup(file) {
   visits.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
   await saveCloud(); await saveFolders(); await saveSettings();
   updateNet(); refreshActive(); scheduleCloud(1500); if (typeof downloadMissingPhotos === 'function' && cloudOn()) downloadMissingPhotos();
-  toast(T('bkRestored', nv, nf, np), 5000);
+  toast(T('bkRestored', nv, nf, np), 5000); audit('restore', file.name, `${nv}/${nf}/${np}`);
 }
 $('bkData').onclick = () => makeBackup(false);
 $('bkFull').onclick = () => makeBackup(true);
@@ -2469,27 +2588,52 @@ const findUser = u => settings.users.find(x => x.u === u.trim().toLowerCase());
 
 function renderUsers() {
   const t = $('tblUsers');
-  t.innerHTML = `<thead><tr><th>${T('username')}</th><th>${T('fullName')}</th><th>${T('docCode')}</th><th>${T('role')}</th><th></th></tr></thead>`;
+  t.innerHTML = `<thead><tr><th>${T('username')}</th><th>${T('fullName')}</th><th>${T('docCode')}</th><th>${T('role')}</th><th>${T('status')}</th><th></th></tr></thead>`;
   const tb = document.createElement('tbody');
+  const admins = () => settings.users.filter(x => x.role === 'admin' && !x.disabled).length;
   settings.users.forEach(u => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td><b>${esc(u.u)}</b></td><td>${esc(u.name)}</td>
-      <td><input class="f-in ucode" maxlength="6" style="width:90px;text-transform:uppercase;padding:6px 8px"> <span class="muted small">${esc((u.code || nameCode(u.name)).toUpperCase())}-1/${+todayKL().slice(5, 7)}</span></td>
-      <td>${T(u.role === 'admin' ? 'roleAdmin' : 'roleStaff')}</td>
-      <td style="text-align:right;white-space:nowrap"><button class="btn-ghost" data-a="reset">🔑 ${T('resetPass')}</button> <button class="btn-danger" data-a="del">${T('delUser')}</button></td>`;
-    const ci = tr.querySelector('.ucode'); ci.value = u.code || nameCode(u.name);
-    ci.onchange = async () => { u.code = ci.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || nameCode(u.name); await saveSettings(); renderUsers(); };
+    const tr = document.createElement('tr'), self = u.u === me?.u;
+    if (u.disabled) tr.style.opacity = .55;
+    tr.innerHTML = `<td><b>${esc(u.u)}</b>${self ? ` <span class="muted small">(${esc(T('you'))})</span>` : ''}</td>
+      <td><input class="f-in uname" style="min-width:170px;padding:6px 8px;text-transform:uppercase"></td>
+      <td><input class="f-in ucode" maxlength="6" style="width:80px;text-transform:uppercase;padding:6px 8px"> <span class="muted small">${esc((u.code || nameCode(u.name)).toUpperCase())}-1/${+todayKL().slice(5, 7)}</span></td>
+      <td><select class="f-in urole" style="padding:6px 8px">${ROLES.map(r => `<option value="${r}" ${r === (u.role || 'staff') ? 'selected' : ''}>${esc(roleLabel(r))}</option>`).join('')}</select></td>
+      <td>${u.disabled ? `<span class="bdg-w">${esc(T('disabledLbl'))}</span>` : `<span class="muted small">${esc(T('activeLbl'))}</span>`}</td>
+      <td style="text-align:right;white-space:nowrap"><button class="btn-ghost" data-a="reset">🔑 ${T('resetPass')}</button>
+        <button class="btn-ghost" data-a="dis">${u.disabled ? '✓ ' + T('enableUser') : '⛔ ' + T('disableUser')}</button>
+        <button class="btn-danger" data-a="del">${T('delUser')}</button></td>`;
+    const ni = tr.querySelector('.uname'), ci = tr.querySelector('.ucode'), ri = tr.querySelector('.urole');
+    ni.value = u.name; ci.value = u.code || nameCode(u.name);
+    if (self) { ri.disabled = true; ri.title = T('notOwnRole'); tr.querySelector('[data-a=dis]').disabled = true; tr.querySelector('[data-a=del]').disabled = true; }
+    ni.onchange = async () => {
+      const nn = ni.value.trim().toUpperCase(); if (!nn || nn === u.name) { ni.value = u.name; return; }
+      const old = u.name; u.name = nn;
+      for (const v of visits) if (v.createdBy === old) { v.createdBy = nn; v.updatedAt = Date.now(); await DB.put('visits', v); }   // keep their visits theirs
+      let fc = false; folders.forEach(f => { if (f.createdBy === old) { f.createdBy = nn; f.updatedAt = Date.now(); fc = true; } }); if (fc) await saveFolders();
+      if (self) { me.name = nn; afterLogin(); }
+      await saveSettings(); audit('userEdited', u.u, `${T('fullName')}: ${old} → ${nn}`); renderUsers(); fillDatalists(); toast(T('saved'));
+    };
+    ci.onchange = async () => { const old = u.code || nameCode(u.name); u.code = ci.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || nameCode(u.name); await saveSettings(); audit('userEdited', u.u, `${T('docCode')}: ${old} → ${u.code}`); renderUsers(); };
+    ri.onchange = async () => {
+      if (u.role === 'admin' && ri.value !== 'admin' && admins() < 2) { ri.value = 'admin'; return toast(T('lastAdmin')); }
+      const old = u.role; u.role = ri.value; await saveSettings(); audit('userEdited', u.u, `${T('role')}: ${roleLabel(old)} → ${roleLabel(u.role)}`); renderUsers(); toast(T('saved'));
+    };
     tr.onclick = async e => {
       const a = e.target.closest('button')?.dataset.a; if (!a) return;
       if (a === 'reset') {
         const pw = prompt(`${u.u} — ${T('newPassQ')}`); if (pw === null) return;
         if (pw.length < 4) return toast(T('passShort'));
-        u.salt = newSalt(); u.hash = await hashPw(pw, u.salt); u._pw = 1; await saveSettings(); toast(T('passChanged'));
+        u.salt = newSalt(); u.hash = await hashPw(pw, u.salt); u._pw = 1; await saveSettings(); audit('passReset', u.u); toast(T('passChanged'));
+      }
+      if (a === 'dis') {
+        if (!u.disabled && u.role === 'admin' && admins() < 2) return toast(T('lastAdmin'));
+        if (!u.disabled && !confirm(T('disableQ', u.u))) return;
+        u.disabled = !u.disabled; await saveSettings(); audit(u.disabled ? 'userDisabled' : 'userEnabled', u.u); renderUsers();
       }
       if (a === 'del') {
-        if (u.role === 'admin' && settings.users.filter(x => x.role === 'admin').length < 2) return toast(T('lastAdmin'));
+        if (u.role === 'admin' && admins() < 2) return toast(T('lastAdmin'));
         if (!confirm(T('delUserQ', u.u))) return;
-        settings.users = settings.users.filter(x => x !== u); await saveSettings(); renderUsers(); fillDatalists();
+        settings.users = settings.users.filter(x => x !== u); await saveSettings(); audit('userDeleted', u.u); renderUsers(); fillDatalists();
       }
     };
     tb.appendChild(tr);
@@ -2504,7 +2648,7 @@ $('nuAdd').onclick = async () => {
   const salt = newSalt();
   const code = $('nuCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || nameCode(name);
   settings.users.push({ u, name, code, role: $('nuRole').value, salt, hash: await hashPw(pw, salt), _pw: 1 });
-  await saveSettings(); renderUsers(); fillDatalists();
+  await saveSettings(); audit('userAdded', u, roleLabel($('nuRole').value)); renderUsers(); fillDatalists();
   $('nuUser').value = $('nuName').value = $('nuPass').value = $('nuCode').value = ''; toast(T('userAdded'));
 };
 
@@ -2554,6 +2698,7 @@ $('loginForm').onsubmit = async e => {
             cloud.linked = true; await saveCloud();
           } catch (e2) { err.textContent = T('cloudFail', e2.message); $('liBtn').disabled = false; return; }
         }
+      } else if (e.message === 'DISABLED') { err.textContent = T('userDisabled'); $('liBtn').disabled = false; return;
       } else if (e.message !== 'BAD_LOGIN' && e.message !== 'NET') { err.textContent = T('cloudFail', e.message); $('liBtn').disabled = false; return; }
       if (!tok && e.message !== 'NET') { err.textContent = T('badLogin'); $('liPass').select(); $('liBtn').disabled = false; return; }
     }
@@ -2563,12 +2708,13 @@ $('loginForm').onsubmit = async e => {
     user = findUser(u);
     if (!user && cloudOn() && !settings.users.length) { err.textContent = T('needNet'); return; }
     if (!user || !user.hash || await hashPw(pw, user.salt) !== user.hash) { err.textContent = T('badLogin'); $('liPass').select(); return; }
+    if (user.disabled) { err.textContent = T('userDisabled'); return; }
   }
   setToken(tok, $('liRem').checked && settings.allowRemember === 'yes');
   me = { u: user.u, name: user.name, role: user.role };
   sessionStorage.setItem('ll.session', user.u);
   if ($('liRem').checked && settings.allowRemember === 'yes') localStorage.setItem('ll.session', user.u); else localStorage.removeItem('ll.session');
-  $('login').hidden = true; afterLogin(); toast(T('hello', user.name));
+  $('login').hidden = true; afterLogin(); toast(T('hello', user.name)); audit('login');
   loginResolve?.(); loginResolve = null;
   cloudSync();
 };
@@ -2585,29 +2731,33 @@ function applyPhone() {
   $('phoneNote').textContent = T('phoneNote');
 }
 function afterLogin() {
-  $('userName').textContent = me.u; $('tbRole').textContent = T(me.role === 'admin' ? 'roleAdmin' : 'roleStaff').toUpperCase();
-  $('mName').textContent = meName(); $('mUser').textContent = `${me.u} · ${T(me.role === 'admin' ? 'roleAdmin' : 'roleStaff')}`;
-  document.querySelector('[data-nav=settings]').style.display = me.role === 'admin' ? '' : 'none';
-  document.querySelector('.side [data-t=navSystem]').style.display = me.role === 'admin' ? '' : 'none';
-  if (me.role !== 'admin' && tabs.includes('settings')) { tabs = tabs.filter(t => t !== 'settings'); if (active === 'settings') go('home'); else renderTabs(); }
+  $('userName').textContent = me.u; $('tbRole').textContent = roleLabel(me.role).toUpperCase();
+  $('mName').textContent = meName(); $('mUser').textContent = `${me.u} · ${roleLabel(me.role)}`;
+  const show = (sel, on) => { const el = document.querySelector(sel); if (el) el.style.display = on ? '' : 'none'; };
+  show('[data-nav=settings]', can('settings') && !isPhone); show('[data-nav=audit]', can('audit') && !isPhone);
+  show('[data-nav=report]', can('report') && !isPhone); show('[data-nav=home]', !isPhone);
+  show('.side [data-t=navSystem]', (can('settings') || can('audit')) && !isPhone);
+  document.body.classList.toggle('ro', !can('create'));
+  const ok = k => !((k === 'settings' && !can('settings')) || (k === 'audit' && !can('audit')) || (k === 'report' && !can('report')));
+  if (tabs.some(k => !ok(k))) { tabs = tabs.filter(ok); if (!tabs.length) tabs = [isPhone ? 'photos' : 'home']; if (!ok(active)) go(tabs[0]); else renderTabs(); }
   fillDatalists();
 }
 async function startLogin() {
   const sess = sessionStorage.getItem('ll.session') || (settings.allowRemember === 'yes' ? localStorage.getItem('ll.session') : null);
   const user = sess && findUser(sess);
-  if (user) { me = { u: user.u, name: user.name, role: user.role }; afterLogin(); return; }
+  if (user && !user.disabled) { me = { u: user.u, name: user.name, role: user.role }; afterLogin(); return; }
   await openLogin();
 }
-function showMe() { if (me) { $('userName').textContent = me.u; $('tbRole').textContent = T(me.role === 'admin' ? 'roleAdmin' : 'roleStaff').toUpperCase(); } }
+function showMe() { if (me) { $('userName').textContent = me.u; $('tbRole').textContent = roleLabel(me.role).toUpperCase(); } }
 $('tbPass').onclick = () => $('mPass').click();
 $('tbLogout').onclick = () => $('mLogout').click();
 document.addEventListener('click', e => { if (!e.target.closest('#userMenu')) $('userMenu').classList.remove('open'); });
 $('mLogout').onclick = async () => {
-  $('userMenu').classList.remove('open'); await flushSave();
+  $('userMenu').classList.remove('open'); await flushSave(); audit('logout');
   sessionStorage.removeItem('ll.session'); localStorage.removeItem('ll.session'); me = null;
   const t = getToken(); setToken(null); if (t && navigator.onLine) rpc('sv_logout', { p_token: t }).catch(() => {});
   await openLogin();
-  if (active === 'settings' && me.role !== 'admin') go('home');
+  if ((active === 'settings' && !can('settings')) || (active === 'audit' && !can('audit')) || (active === 'report' && !can('report'))) go(isPhone ? 'photos' : 'home');
 };
 $('mPass').onclick = async () => {
   $('userMenu').classList.remove('open');
@@ -2647,10 +2797,15 @@ async function rpc(fn, args = {}) {
 }
 const clean = o => JSON.parse(JSON.stringify(o, (k, v) => k.startsWith('_') || v === PH_BLOB ? undefined : v));
 const sig = o => { const s = JSON.stringify(o); let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return s.length + ':' + h; };
-const userDoc = u => ({ u: u.u, name: u.name, code: u.code || nameCode(u.name), role: u.role });
+const userDoc = u => ({ u: u.u, name: u.name, code: u.code || nameCode(u.name), role: u.role, disabled: !!u.disabled });
 const photoDoc = p => ({ id: p.id, visitId: p.visitId, caption: p.caption || '', at: p.at || 0, by: p.by || '', driveId: cloud.drive[p.id] || '' });
 function sharedSettings() { const o = {}; SHARED_KEYS.forEach(k => o[k] = settings[k] ?? null); return o; }
-function canEdit(v) { return !v || !me || me.role === 'admin' || !v.createdBy || v.createdBy === me.name; }
+function canEdit(v) {
+  if (!me) return true;
+  if (me.role === 'viewer') return false;
+  if (can('editAll')) return true;
+  return !v || !v.createdBy || v.createdBy === me.name;
+}
 function mergeMe(d) {          // user record from the database → this device (keeps the password for offline login)
   let u = findUser(d.u);
   if (!u) { u = { u: d.u }; settings.users.push(u); }
@@ -2784,6 +2939,51 @@ async function downloadMissingPhotos() {        // keep a copy of every photo on
   } finally { dlBusy = false; }
   if (!editMode) refreshActive();
 }
+/* ---------- Audit log: who did what, from every device ---------- */
+let auditQ = [];          // waiting to be sent to the shared database (kept on this device until then)
+function audit(action, ref = '', detail = '') {
+  if (!me) return;
+  auditQ.push({ cid: uid(), at: Date.now(), u: me.u, name: meName(), action, ref: String(ref ?? ''), detail: String(detail ?? ''), device: isPhone ? 'Phone' : 'Computer' });
+  if (auditQ.length > 5000) auditQ = auditQ.slice(-5000);
+  DB.put('settings', auditQ, 'auditQ').catch(() => {}); scheduleCloud(6000);
+}
+async function auditFlush(token) {
+  while (auditQ.length) {
+    const part = auditQ.slice(0, 200);
+    await rpc('sv_audit_add', { p_token: token, p_rows: part });
+    const sent = new Set(part.map(x => x.cid)); auditQ = auditQ.filter(x => !sent.has(x.cid));
+    await DB.put('settings', auditQ, 'auditQ');
+  }
+}
+let auditRows = [], auditBusy = false;
+const auDay = (d, end) => { const t = new Date(d + 'T00:00:00+08:00').getTime(); return end ? t + 86400000 - 1 : t; };
+async function renderAudit(reload = true) {
+  if (!$('auFrom').value) { const d = new Date(Date.now() - 29 * 86400000 + 8 * 3600000); $('auFrom').value = d.toISOString().slice(0, 10); $('auTo').value = todayKL(); }
+  if (reload) {
+    if (auditBusy) return; auditBusy = true; $('auNote').textContent = T('loading');
+    let server = [], note = '';
+    try {
+      if (cloudOn() && navigator.onLine && getToken()) server = await rpc('sv_audit_list', { p_token: getToken(), p_from: auDay($('auFrom').value), p_to: auDay($('auTo').value, true), p_limit: 3000 });
+      else note = T('auOffline');
+    } catch (e) { note = e.message === 'NET' ? T('auOffline') : T('cloudFail', e.message); }
+    finally { auditBusy = false; }
+    const seen = new Set(server.map(x => x.cid));
+    auditRows = [...auditQ.filter(x => !seen.has(x.cid)).map(x => ({ ...x, unsent: true })), ...server].sort((a, b) => b.at - a.at);
+    $('auNote').textContent = note;
+    fillSelect($('auUser'), uniq(auditRows.map(x => x.u)).map(x => [x, x]), T('allUsers'));
+    fillSelect($('auAct'), uniq(auditRows.map(x => x.action)).map(x => [x, evText(x, '')]), T('allActions'));
+  }
+  const f = auDay($('auFrom').value), t = auDay($('auTo').value, true), uu = $('auUser').value, ac = $('auAct').value, q = $('auQ').value.trim().toLowerCase();
+  const rows = auditRows.filter(x => x.at >= f && x.at <= t && (!uu || x.u === uu) && (!ac || x.action === ac)
+    && (!q || `${x.u} ${x.name} ${x.ref} ${x.detail} ${evText(x.action, x.detail)}`.toLowerCase().includes(q)));
+  $('auCount').textContent = T('nRows', rows.length);
+  $('auTbl').innerHTML = `<thead><tr><th>${esc(T('auTime'))}</th><th>${esc(T('cUser'))}</th><th>${esc(T('auAction'))}</th><th>${esc(T('auRef'))}</th><th>${esc(T('auDetail'))}</th><th>${esc(T('auDevice'))}</th></tr></thead><tbody>` +
+    (rows.slice(0, 1500).map(x => `<tr${x.unsent ? ' style="background:#fffbeb"' : ''}><td style="white-space:nowrap">${fmtStamp(x.at)}</td><td><b>${esc(x.u)}</b><div class="muted small">${esc(x.name || '')}</div></td>
+      <td>${esc(evText(x.action, x.detail))}</td><td>${esc(x.ref || '')}</td><td class="muted small">${esc(['photos', 'detached'].includes(x.action) ? '' : x.detail || '')}</td><td class="muted small">${esc(x.device || '')}${x.unsent ? ' · ' + esc(T('notSentYet')) : ''}</td></tr>`).join('')
+     || `<tr><td colspan="6" class="muted">${esc(T('noRows'))}</td></tr>`) + '</tbody>';
+  auditView = rows;
+}
+let auditView = [];
 async function relinkPhotos() {     // a visit/folder always lists every photo that belongs to it (an older copy saved on another device cannot drop them)
   const own = {};
   for (const p of await DB.all('photos')) (own[p.visitId] ||= []).push(p);
@@ -2812,6 +3012,7 @@ async function cloudSync(manual = false) {
     if (!cloud.linked) res = await cloudPull(token);        // joining: take the shared data first
     await relinkPhotos();
     await cloudPush(token);
+    try { await auditFlush(token); } catch (e) { /* audit table not set up yet: keep the entries and try again later */ }
     const r2 = await cloudPull(token);
     if (await relinkPhotos()) { r2.changed = true; scheduleCloud(1500); }
     if ((res.changed || r2.changed) && !editMode && !document.querySelector('dialog[open]')) refreshActive();
@@ -2824,10 +3025,13 @@ async function cloudSync(manual = false) {
 
 /* ---------- Start ---------- */
 (async function init() {
+  if (isPhone) document.body.classList.add('phone');      // phone look from the login page on
+  try { if (!history.state?.sv) history.replaceState({ sv: 1, k: 'root' }, ''); } catch (e) {}
   await DB.open();
   settings = { ...settings, ...(await DB.get('settings', 'main') || {}) };
   folders = (await DB.get('settings', 'folders')) || [];
   cloud = { ...cloud, ...(await DB.get('settings', 'cloud') || {}) };
+  auditQ = (await DB.get('settings', 'auditQ')) || [];
   await loadVisits();
   await relinkPhotos().catch(() => {});      // bring back photos that lost their place in a visit
   if (!settings.fixCopy1) {      // earlier versions could upload the grey "not downloaded yet" picture to Drive: send every visit again once
@@ -2842,7 +3046,7 @@ async function cloudSync(manual = false) {
     if (!v.createdAt) { v.createdAt = v.updatedAt || Date.now(); ch = true; }
     if (v.createdBy === undefined) { v.createdBy = v.pegawai || ''; ch = true; }
     if (!v.officers) { setOfficers(v, offsOf(v)); ch = true; }
-    if (!v.officers.length && v.createdBy) { setOfficers(v, [v.createdBy]); ch = true; }
+    if (!v.officers.length && v.createdBy && !v.noName) { setOfficers(v, [v.createdBy]); ch = true; }
     if (!v.log) { v.log = [{ what: 'created', t: v.createdAt, by: v.createdBy }]; if (v.photoIds.length) v.log.push({ what: 'photos', t: v.createdAt, by: v.createdBy, n: v.photoIds.length }); if (v.syncedAt) v.log.push({ what: 'synced', t: v.syncedAt, by: v.createdBy }); ch = true; }
     if (!v.title) { v.title = settings.titles[0]; ch = true; }
     if (settings.docScheme !== 'user') { v.docNo = ''; ch = true; }
