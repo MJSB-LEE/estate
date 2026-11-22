@@ -36,6 +36,7 @@
   .top .logo img{height:32px}
   .top h1{margin:0;font-size:17px;font-weight:800;letter-spacing:.3px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .top .pill{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.18);white-space:nowrap}
+  #syncBar{position:fixed;top:0;left:0;height:3px;width:0;background:#22c55e;z-index:300;transition:width .3s,opacity .4s;opacity:0}
   .top .pill.off{background:#fbbf24;color:#3b2500}
   .lang{display:flex;border:1px solid rgba(255,255,255,.5);border-radius:999px;overflow:hidden}
   .lang button{padding:3px 10px;border-radius:0;font-size:12px;background:transparent;color:#fff}
@@ -375,6 +376,7 @@
 </head>
 <body>
 
+<div id="syncBar"></div>
 <div class="top">
   <button id="btnMenu">☰</button>
   <a class="tb-btn portal-link" href="../" title="MJSB Portal">← <span class="tx">Portal</span></a>
@@ -1485,7 +1487,7 @@ function newFolder(estate, ref, note) {
 async function attachFolder(f) {
   (cur.attached ||= []).push({ id: f.id, docNo: f.docNo, note: f.note || '', ladang: f.ladang, tarikh: f.tarikh, createdBy: f.createdBy, createdAt: f.createdAt, photoIds: [...f.photoIds], at: Date.now(), by: meName() });
   if (f.syncedAt) queueTrash(f.id);
-  for (const pid of f.photoIds) { const p = await getPhoto(pid); if (!p) continue; p.visitId = cur.id; await DB.put('photos', { id: p.id, visitId: p.visitId, blob: p.blob, caption: p.caption, at: p.at, by: p.by }); cur.photoIds.push(pid); }
+  for (const pid of f.photoIds) { const p = await getPhoto(pid); if (!p) continue; p.visitId = cur.id; if (!p.caption && f.note) p.caption = f.note; await DB.put('photos', { id: p.id, visitId: p.visitId, blob: p.blob, caption: p.caption, at: p.at, by: p.by }); cur.photoIds.push(pid); }
   folders = folders.filter(x => x !== f); await saveFolders();
   logEv(cur, 'photos', f.photoIds.length);
   markChanged(); await saveNow(); renderPhotos(); renderAttach();
@@ -1505,6 +1507,7 @@ async function movePhotoBack(v, pid, quiet) {
     if (!f) { f = newFolder(v.ladang, '', T('movedFrom', v.docNo || docLabel(v))); f.movedFrom = v.id; }
   }
   v.photoIds = v.photoIds.filter(x => x !== pid);
+  if (a && a.note && p.caption === a.note) p.caption = '';
   p.visitId = f.id; await DB.put('photos', { id: p.id, visitId: f.id, blob: p.blob, caption: p.caption, at: p.at, by: p.by });
   f.photoIds.push(pid); f.status = 'pending'; f.updatedAt = Date.now(); await saveFolders();
   logEv(v, 'detached', 1);
@@ -1517,7 +1520,7 @@ async function movePhotoBack(v, pid, quiet) {
 async function detachFolder(a) {
   const ids = a.photoIds.filter(id => cur.photoIds.includes(id));
   cur.photoIds = cur.photoIds.filter(id => !ids.includes(id));
-  for (const pid of ids) { const p = await getPhoto(pid); if (!p) continue; p.visitId = a.id; await DB.put('photos', { id: p.id, visitId: a.id, blob: p.blob, caption: p.caption, at: p.at, by: p.by }); }
+  for (const pid of ids) { const p = await getPhoto(pid); if (!p) continue; p.visitId = a.id; if (a.note && p.caption === a.note) p.caption = ''; await DB.put('photos', { id: p.id, visitId: a.id, blob: p.blob, caption: p.caption, at: p.at, by: p.by }); }
   folders.push({ id: a.id, isFolder: true, docNo: a.docNo, note: a.note, ladang: a.ladang, tarikh: a.tarikh, title: '', photoIds: ids, createdBy: a.createdBy, createdAt: a.createdAt, status: 'pending', updatedAt: Date.now() });
   await saveFolders();
   cur.attached = cur.attached.filter(x => x !== a);
@@ -1906,7 +1909,7 @@ function renderPhotos() {
     const upd = () => cnt.textContent = T('left', CAPTION_MAX - cap.value.length); upd();
     cap.addEventListener('input', () => {
       p.caption = cap.value; upd();
-      clearTimeout(p._t); p._t = setTimeout(() => DB.put('photos', { id: p.id, visitId: p.visitId, blob: p.blob, caption: p.caption, at: p.at, by: p.by }), 400);
+      clearTimeout(p._t); p._t = setTimeout(() => { DB.put('photos', { id: p.id, visitId: p.visitId, blob: p.blob, caption: p.caption, at: p.at, by: p.by }); scheduleCloud(); }, 400);
       markChanged();
     });
     card.querySelector('.ph-tools').addEventListener('click', e => {
@@ -2115,7 +2118,20 @@ $('btnDelVisit').onclick = async () => {
 };
 
 /* ---------- Google Drive sync ---------- */
+const prog = { d: 0, t: 0 };
+function progAdd(n) { if (n > 0) { prog.t += n; showProg(); } }
+function progStep() { if (prog.t) { prog.d = Math.min(prog.t, prog.d + 1); showProg(); } }
+function progCheck() { if (!syncing && !cloudBusy && prog.t) { prog.d = prog.t; showProg(); setTimeout(() => { if (!syncing && !cloudBusy) { prog.d = prog.t = 0; showProg(); } }, 600); } }
+const progPct = () => prog.t ? Math.round(prog.d * 100 / prog.t) : 0;
+function showProg() {
+  const bar = $('syncBar'); if (!bar) return;
+  bar.style.opacity = prog.t ? 1 : 0; bar.style.width = prog.t ? progPct() + '%' : '0';
+  updateNet();
+}
 async function post(body) {
+  try { return await post0(body); } finally { progStep(); }
+}
+async function post0(body) {
   const r = await fetch(settings.syncUrl, { method: 'POST', body: JSON.stringify({ key: settings.syncKey, ...body }) });
   const j = await r.json();
   if (!j.ok) throw new Error(j.error || 'Server error');
@@ -2182,13 +2198,15 @@ async function syncAll(manual = false) {
   const ready = x => x.status === 'pending' && (manual || Date.now() - (x.updatedAt || 0) > 120000);   // wait 2 min after the last edit
   const todo = [...savedV().filter(ready), ...folders.filter(ready)].filter(canEdit), trash = [...(settings.trashQ || [])];
   if (!todo.length && !trash.length) { if (manual) toast(T('allSynced')); return; }
-  syncing = true; updateNet();
+  syncing = true;
+  progAdd(1 + trash.length + todo.reduce((n, x) => n + 3 + x.photoIds.reduce((m, pid) => m + (cloud.drive[pid] ? 1 : 2), 0), 0));
+  updateNet();
   let ok = 0;
   try { if (!scriptV) { const r = await post({ action: 'ping' }); scriptV = r.v || 1; } }
-  catch (e) { syncing = false; updateNet(); toast(T('syncFail', e.message), 4000); return; }
-  if (scriptV < 3) { syncing = false; updateNet(); toast(T('oldScript'), 7000); return; }
+  catch (e) { syncing = false; progCheck(); updateNet(); toast(T('syncFail', e.message), 4000); return; }
+  if (scriptV < 3) { syncing = false; progCheck(); updateNet(); toast(T('oldScript'), 7000); return; }
   try { for (const id of trash) { await post({ action: 'trash', visitId: id }); settings.trashQ = settings.trashQ.filter(x => x !== id); } await saveSettings(); }
-  catch (e) { syncing = false; updateNet(); toast(T('syncFail', e.message), 4000); return; }
+  catch (e) { syncing = false; progCheck(); updateNet(); toast(T('syncFail', e.message), 4000); return; }
   for (const v of todo) {
     if (v.isFolder) {
       const stamp = v.updatedAt;
@@ -2203,13 +2221,14 @@ async function syncAll(manual = false) {
       ok++;
     } catch (e) { if (e instanceof NotReady) continue; toast(T('syncFail', e.message), 4000); break; }
   }
-  syncing = false; updateNet(); refreshActive();
+  syncing = false; progCheck(); updateNet(); refreshActive();
   if (ok) toast(T('syncOk', ok));
 }
 function updateNet() {
   const p = $('netPill'), pend = savedV().filter(v => v.status === 'pending').length + folders.filter(f => f.status === 'pending').length;
   const w = pend ? ' · ' + T('waiting', pend) : '';
   if (!navigator.onLine) { p.className = 'pill off'; p.textContent = `● ${T('offline')}${w}`; }
+  else if (prog.t) { p.className = 'pill'; p.textContent = `${T('syncingNow')} ${progPct()}%`; }
   else if (syncing) { p.className = 'pill'; p.textContent = T('syncingNow'); }
   else { p.className = 'pill'; p.textContent = `● ${T('online')}${w}`; }
   if (cloudOn() && cloudPending) p.textContent += ` · ☁ ${cloudPending}`;
@@ -2623,6 +2642,7 @@ async function fetchDrivePhoto(pid) {
 }
 async function cloudPush(token) {
   const docs = await localDocs(), have = new Set(docs.map(d => d.kind + ':' + d.id)), send = [];
+  progAdd(docs.filter(d => d.kind === 'photo' && !d.data.driveId && d.rec.blob && settings.syncUrl && cloud.pushed[d.kind + ':' + d.id] !== sig(d.data)).length);
   for (const d of docs) {
     const key = d.kind + ':' + d.id;
     if (cloud.pushed[key] === sig(d.data) && !d.extra) continue;
@@ -2684,7 +2704,8 @@ async function cloudPull(token) {
     } else if (d.kind === 'photo') {
       const p = await DB.get('photos', d.id);
       if (d.deleted) { if (p) { await DB.del('photos', d.id); delete photoCache[d.id]; if (urls[d.id]) { URL.revokeObjectURL(urls[d.id]); delete urls[d.id]; } changed = true; } delete cloud.pushed[key]; continue; }
-      if (p && cloud.pushed[key] && cloud.pushed[key] !== sig(photoDoc(p)) && !cloud.force[key]) continue;
+      const mem = photoCache[d.id] || p;        // what is on screen (a caption may be typed but not stored yet)
+      if (mem && cloud.pushed[key] && (cloud.pushed[key] !== sig(photoDoc(mem)) || (p && sig(photoDoc(p)) !== sig(photoDoc(mem)))) && !cloud.force[key]) continue;
       cloud.drive[d.id] = d.data.driveId;
       const rec = { id: d.id, visitId: d.data.visitId, caption: d.data.caption, at: d.data.at, by: d.data.by, blob: p?.blob || null };
       await DB.put('photos', rec);
@@ -2761,7 +2782,7 @@ async function cloudSync(manual = false) {
   } catch (e) {
     if (e.message === 'SESSION') { setToken(null); toast(T('sessionEnded'), 5000); cloudBusy = false; $('mLogout').click(); return; }
     if (e.message !== 'NET' && manual) toast(T('cloudFail', e.message), 5000);
-  } finally { cloudBusy = false; updateNet(); }
+  } finally { cloudBusy = false; progCheck(); updateNet(); }
 }
 
 /* ---------- Start ---------- */
