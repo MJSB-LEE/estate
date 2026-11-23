@@ -38,7 +38,9 @@
   .top h1{margin:0;font-size:17px;font-weight:800;letter-spacing:.3px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .top .pill{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.18);white-space:nowrap}
   #syncBar{position:fixed;top:0;left:0;height:3px;width:0;background:#22c55e;z-index:300;transition:width .3s,opacity .4s;opacity:0}
-  .top .pill.off{background:#fbbf24;color:#3b2500}
+  .top .pill{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+  .top .pill .dot{width:9px;height:9px;border-radius:50%;flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.3)}
+  .dot.ok{background:#22c55e}.dot.wait{background:#f59e0b}.dot.run{background:#38bdf8}.dot.off{background:#cbd5e1}.dot.err{background:#ef4444}
   .lang{display:flex;border:1px solid rgba(255,255,255,.5);border-radius:999px;overflow:hidden}
   .lang button{padding:3px 10px;border-radius:0;font-size:12px;background:transparent;color:#fff}
   .lang button.on{background:#fff;color:var(--blue)}
@@ -277,7 +279,9 @@
   .role-badge{border:1.5px solid #fff;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:800;letter-spacing:.5px}
   .tb-user{font-size:14px;white-space:nowrap}
   .tb-btn{background:rgba(255,255,255,.15);color:#fff;font-size:13px;padding:6px 12px;white-space:nowrap}
-  body.ro [data-go=new], body.ro #phNew, body.ro #btnEdit, body.ro #btnDelVisit, body.ro #phCam, body.ro #phAdd, body.ro #phEditB, body.ro #phDelF{display:none!important}
+  body.ro [data-go=new], body.ro #phNew, body.ro #phCam, body.ro #phAdd, body.ro #phEditB{display:none!important}
+  body.noprint #btnPdf, body.noprint #phPrintAll, body.noprint #lbPrint, body.noprint [data-pg=print]{display:none!important}
+  body.nodel #btnDelVisit, body.nodel #phDelF{display:none!important}
   .side-lang-wrap{display:none}
   body.phone .side-lang-wrap{display:block}
   .side-lang{float:none;display:inline-flex;align-self:flex-start;margin:4px 12px 12px}
@@ -318,10 +322,22 @@
   }
 
   /* Settings */
-  .stabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:2px solid var(--line);margin-bottom:14px}
-  .stabs button{background:transparent;border-radius:8px 8px 0 0;padding:10px 16px;color:var(--muted);font-weight:600;border-bottom:3px solid transparent;margin-bottom:-2px}
-  .stabs button:hover{color:var(--blue);background:#f3f6fb}
-  .stabs button.on{color:var(--blue);border-bottom-color:var(--blue)}
+  .setgrid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:18px;align-items:start}
+  .stabs{display:flex;flex-direction:column;gap:2px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;position:sticky;top:10px}
+  .stabs button{background:transparent;border-radius:8px;padding:10px 12px;color:#334155;font-weight:600;text-align:left;display:flex;gap:8px;align-items:center}
+  .stabs button:hover{background:#f3f6fb;color:var(--blue)}
+  .stabs button.on{background:var(--blue);color:#fff}
+  .stabs button.sub{margin-left:26px;padding:7px 12px;font-weight:500;font-size:13px}
+  .stabs button.sub.on{background:#e8eefc;color:var(--blue)}
+  .stabs button.grp-on{background:var(--blue);color:#fff}
+  .utabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:10px 0 14px}
+  .utabs button{background:transparent;padding:8px 14px;color:var(--muted);font-weight:600;border-bottom:3px solid transparent;margin-bottom:-1px;border-radius:0}
+  .utabs button.on{color:var(--blue);border-bottom-color:var(--blue)}
+  .gtbl th, .gtbl td{text-align:center}
+  .gtbl th:first-child, .gtbl td:first-child{text-align:left}
+  .gtbl input[type=checkbox]{width:18px;height:18px;accent-color:var(--blue);cursor:pointer}
+  .gchip{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700}
+  @media (max-width:900px){ .setgrid{grid-template-columns:1fr} .stabs{position:static;flex-direction:row;flex-wrap:wrap} .stabs button.sub{margin-left:0} }
   .spane{display:none}
   .spane.on{display:block}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
@@ -412,7 +428,6 @@
     <a data-nav="report">📊 <span data-t="monthly"></span></a>
     <div class="sec" data-t="navSystem"></div>
     <a data-nav="settings">⚙️ <span data-t="settings"></span></a>
-    <a data-nav="audit">🕵️ <span data-t="auditLog"></span></a>
     <div class="side-lang-wrap"><div class="sec" data-t="language"></div>
       <div class="lang login-lang side-lang"><button type="button" data-lang="ms">BM</button><button type="button" data-lang="en">EN</button></div></div>
   </nav>
@@ -502,32 +517,18 @@
       </section>
 
       <!-- SETTINGS -->
-      <section class="page" id="pg-audit">
-        <div class="card">
-          <div class="bar" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end">
-            <div><label class="f" data-t="auFrom"></label><input class="f-in" type="date" id="auFrom"></div>
-            <div><label class="f" data-t="auTo"></label><input class="f-in" type="date" id="auTo"></div>
-            <div><label class="f" data-t="cUser"></label><select class="f-in" id="auUser"></select></div>
-            <div><label class="f" data-t="auAction"></label><select class="f-in" id="auAct"></select></div>
-            <div><label class="f" data-t="search"></label><input class="f-in" id="auQ" type="search"></div>
-          </div>
-          <div class="row-actions" style="margin:12px 0;gap:10px;flex-wrap:wrap">
-            <button class="btn-ghost" id="auReload">🔄 <span data-t="refresh"></span></button>
-            <button class="btn-ghost" id="auCsv">⬇ CSV</button>
-            <span class="muted small" id="auCount"></span><span class="muted small" id="auNote"></span>
-          </div>
-          <div style="overflow:auto"><table class="tbl" id="auTbl"></table></div>
-        </div>
-      </section>
-
       <section class="page set" id="pg-settings">
+        <div class="setgrid">
         <div class="stabs" id="stabs">
-          <button data-st="general" data-t="setGeneral"></button>
-          <button data-st="pdf" data-t="setReport"></button>
-          <button data-st="lists" data-t="setLists"></button>
-          <button data-st="users" data-t="setUsers"></button>
-          <button data-st="sync">Google Drive Sync</button>
-          <button data-st="backup" data-t="setBackup"></button>
+          <button data-st="general">🏢 <span data-t="setGeneral"></span></button>
+          <button data-st="pdf">🧾 <span data-t="setReport"></span></button>
+          <button data-st="lists">📋 <span data-t="setLists"></span></button>
+          <button data-st="users" class="adm-only">👥 <span data-t="setUsers"></span></button>
+          <button data-st="users" class="sub adm-only" data-sub="users"><span data-t="usersTab"></span></button>
+          <button data-st="groups" class="sub adm-only"><span data-t="groupsTab"></span></button>
+          <button data-st="sync">☁️ Google Drive Sync</button>
+          <button data-st="backup">💾 <span data-t="setBackup"></span></button>
+          <button data-st="audit">🕵️ <span data-t="auditLog"></span></button>
         </div>
         <div class="card">
           <div class="spane" data-sp="general">
@@ -569,16 +570,48 @@
           </div>
 
           <div class="spane" data-sp="users">
+            <h2 style="margin:0 0 2px" data-t="setUsers"></h2><p class="hint" style="margin-top:0" data-t="usersIntro"></p>
+            <div class="utabs"><button class="on" data-ut="users" data-t="usersTab"></button><button data-ut="groups" data-t="groupsTab"></button></div>
             <div class="tblwrap"><table class="tbl" id="tblUsers"></table></div>
             <div class="grid2" style="margin-top:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
               <div><label class="f req" data-t="username"></label><input class="f-in" id="nuUser" autocomplete="off"></div>
               <div><label class="f req" data-t="fullName"></label><input class="f-in" id="nuName" autocomplete="off"></div>
               <div><label class="f req" data-t="password"></label><input class="f-in" id="nuPass" type="password" autocomplete="new-password"></div>
               <div><label class="f" data-t="docCode"></label><input class="f-in" id="nuCode" maxlength="6" style="text-transform:uppercase" data-tp="docCodePh"></div>
-              <div><label class="f" data-t="role"></label><select class="f-in" id="nuRole"><option value="staff" data-t="role_staff"></option><option value="manager" data-t="role_manager"></option><option value="viewer" data-t="role_viewer"></option><option value="admin" data-t="role_admin"></option></select></div>
+              <div><label class="f" data-t="groupCol"></label><select class="f-in" id="nuRole"></select></div>
               <div style="display:flex;align-items:end"><button class="btn" id="nuAdd" style="width:100%" data-t="addUser"></button></div>
             </div>
             <p class="hint" data-t="usersHint"></p>
+          </div>
+
+          <div class="spane" data-sp="groups">
+            <h2 style="margin:0 0 2px" data-t="setUsers"></h2><p class="hint" style="margin-top:0" data-t="groupsIntro"></p>
+            <div class="utabs"><button data-ut="users" data-t="usersTab"></button><button class="on" data-ut="groups" data-t="groupsTab"></button></div>
+            <div class="tblwrap"><table class="tbl gtbl" id="tblGroups"></table></div>
+            <div class="row-actions" style="margin-top:12px;gap:10px;flex-wrap:wrap">
+              <input class="f-in" id="ngName" style="max-width:280px" data-tp="newGroupPh">
+              <button class="btn-ghost" id="ngAdd">+ <span data-t="addGroup"></span></button>
+              <span style="flex:1"></span>
+              <button class="btn" id="gSave" data-t="save"></button>
+            </div>
+            <p class="hint" data-t="groupsHint"></p>
+          </div>
+
+          <div class="spane" data-sp="audit">
+            <h2 style="margin:0 0 2px" data-t="auditLog"></h2><p class="hint" style="margin-top:0" data-t="auditIntro"></p>
+            <div class="bar" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;align-items:end">
+              <div><label class="f" data-t="auFrom"></label><input class="f-in" type="date" id="auFrom"></div>
+              <div><label class="f" data-t="auTo"></label><input class="f-in" type="date" id="auTo"></div>
+              <div><label class="f" data-t="cUser"></label><select class="f-in" id="auUser"></select></div>
+              <div><label class="f" data-t="auAction"></label><select class="f-in" id="auAct"></select></div>
+              <div><label class="f" data-t="search"></label><input class="f-in" id="auQ" type="search"></div>
+            </div>
+            <div class="row-actions" style="margin:12px 0;gap:10px;flex-wrap:wrap">
+              <button class="btn-ghost" id="auReload">🔄 <span data-t="refresh"></span></button>
+              <button class="btn-ghost" id="auCsv">⬇ CSV</button>
+              <span class="muted small" id="auCount"></span><span class="muted small" id="auNote"></span>
+            </div>
+            <div style="overflow:auto"><table class="tbl" id="auTbl"></table></div>
           </div>
 
           <div class="spane" data-sp="sync">
@@ -604,10 +637,11 @@
             <p class="hint" id="bkLast"></p>
           </div>
 
-          <div class="row-actions" style="margin-top:20px;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px">
+          <div class="row-actions" id="setSaveRow" style="margin-top:20px;justify-content:space-between;border-top:1px solid var(--line);padding-top:14px">
             <span class="muted small"><span class="reqmark">*</span> <span data-t="reqNote"></span></span>
             <button class="btn" id="btnSaveSettings" data-t="save"></button>
           </div>
+        </div>
         </div>
       </section>
 
@@ -847,7 +881,17 @@ const STR = {
     byEstate2: '🗂 Gambar ikut ladang', clickEstate: 'Klik ladang untuk lihat lawatan dan gambarnya.', allEstatesCrumb: '📂 Semua ladang',
     nVisits: n => `${n} lawatan`, estatePhotos: e => `🗂 Lawatan ${e}`, clickFolder: 'Klik lawatan untuk lihat atau tambah gambar.', addPhotos: '⬆ Tambah gambar', takePhoto: '📷 Ambil gambar',
     noEstatesYet: 'Belum ada lawatan.', noPhotoInFolder: 'Tiada gambar dalam lawatan ini.', photoDeleted: 'Gambar dipadam.',
-    userLbl: 'Pengguna', changePassShort: 'Tukar kata laluan', logoutShort: 'Log keluar', language: 'Bahasa', exitQ: 'Keluar dari Site Visit?',
+    userLbl: 'Pengguna', changePassShort: 'Tukar kata laluan', logoutShort: 'Log keluar',
+    usersTab: 'Pengguna', groupsTab: 'Kumpulan pengguna', groupCol: 'Kumpulan', nUsers: n => `${n} pengguna`, fixedLbl: 'tetap', rename: 'Tukar nama', delete: 'Padam',
+    renameQ: 'Nama baharu kumpulan:', groupExists: 'Nama kumpulan ini sudah ada.', groupHasUsers: n => `Kumpulan ini masih ada ${n} pengguna. Pindahkan mereka dahulu.`,
+    delGroupQ: g => `Padam kumpulan "${g}"?`, addGroup: 'Tambah kumpulan', newGroupPh: 'Nama kumpulan baharu, cth. Pasukan Ladang',
+    usersIntro: 'Setiap pengguna log masuk dengan nama pengguna sendiri. Kumpulan menentukan apa yang boleh dilihat dan dibuat.',
+    groupsIntro: 'Tanda apa yang setiap kumpulan boleh buat, kemudian tekan Simpan. Semua ahli kumpulan dapat perubahan di semua peranti.',
+    groupsHint: '🔒 Admin sentiasa ada semua kuasa, supaya tiada siapa terkunci di luar. Kumpulan yang masih ada pengguna tidak boleh dipadam.',
+    auditIntro: 'Siapa buat apa dan bila, dari semua telefon dan PC.',
+    perm_seeAll: 'Lihat lawatan orang lain', perm_create: 'Buat lawatan & folder gambar', perm_editAll: 'Ubah lawatan orang lain', perm_delete: 'Padam lawatan',
+    perm_print: 'Cetak', perm_report: 'Laporan bulanan', perm_settings: 'Tetapan', perm_audit: 'Log audit', au_groups: 'Kumpulan pengguna diubah',
+    syncProblem: 'Masalah sync · tekan', tryAgainQ: 'Cuba lagi sekarang?', language: 'Bahasa', exitQ: 'Keluar dari Site Visit?',
     role_admin: 'Admin', role_manager: 'Pengurus', role_staff: 'Staf', role_viewer: 'Pemerhati', status: 'Status', you: 'anda',
     activeLbl: 'Aktif', disabledLbl: 'Dinyahaktif', disableUser: 'Nyahaktif', enableUser: 'Aktifkan', disableQ: u => `Nyahaktifkan ${u}? Dia tidak boleh log masuk, tetapi lawatannya kekal.`,
     userDisabled: 'Akaun ini telah dinyahaktifkan. Hubungi admin.', notOwnRole: 'Anda tidak boleh tukar peranan sendiri.', viewOnly: 'Akaun anda hanya untuk melihat.', saved: 'Disimpan ✓',
@@ -949,7 +993,17 @@ const STR = {
     byEstate2: '🗂 Photos by estate', clickEstate: 'Click an estate to see its visits and photos.', allEstatesCrumb: '📂 All estates',
     nVisits: n => `${n} visit${n === 1 ? '' : 's'}`, estatePhotos: e => `🗂 ${e} visits`, clickFolder: 'Click a visit to see or add photos.', addPhotos: '⬆ Add photos', takePhoto: '📷 Take photo',
     noEstatesYet: 'No visits yet.', noPhotoInFolder: 'No photos in this visit.', photoDeleted: 'Photo deleted.',
-    userLbl: 'User', changePassShort: 'Change password', logoutShort: 'Logout', language: 'Language', exitQ: 'Leave Site Visit?',
+    userLbl: 'User', changePassShort: 'Change password', logoutShort: 'Logout',
+    usersTab: 'Users', groupsTab: 'User groups', groupCol: 'Group', nUsers: n => `${n} user${n === 1 ? '' : 's'}`, fixedLbl: 'fixed', rename: 'Rename', delete: 'Delete',
+    renameQ: 'New name for this group:', groupExists: 'A group with this name already exists.', groupHasUsers: n => `This group still has ${n} user${n === 1 ? '' : 's'}. Move them to another group first.`,
+    delGroupQ: g => `Delete the group "${g}"?`, addGroup: 'Add group', newGroupPh: 'New group name, e.g. Estate Team',
+    usersIntro: 'Each user logs in with their own username. Their group decides what they can see and do.',
+    groupsIntro: 'Tick what each group may do, then press Save. Everyone in that group gets it on all devices.',
+    groupsHint: '🔒 Admin always has everything, so nobody can lock themselves out. A group that still has users cannot be deleted.',
+    auditIntro: 'Who did what and when, from every phone and PC.',
+    perm_seeAll: "See other people's visits", perm_create: 'Create visits & photo folders', perm_editAll: "Edit other people's visits", perm_delete: 'Delete visits',
+    perm_print: 'Print', perm_report: 'Monthly report', perm_settings: 'Settings', perm_audit: 'Audit log', au_groups: 'User groups changed',
+    syncProblem: 'Sync problem · tap', tryAgainQ: 'Try again now?', language: 'Language', exitQ: 'Leave Site Visit?',
     role_admin: 'Admin', role_manager: 'Manager', role_staff: 'Staff', role_viewer: 'Viewer', status: 'Status', you: 'you',
     activeLbl: 'Active', disabledLbl: 'Disabled', disableUser: 'Disable', enableUser: 'Enable', disableQ: u => `Disable ${u}? They cannot log in, but their visits stay.`,
     userDisabled: 'This account is disabled. Please contact the admin.', notOwnRole: 'You cannot change your own role.', viewOnly: 'Your account is view only.', saved: 'Saved ✓',
@@ -1081,17 +1135,22 @@ function assignDocNo(v) {
   v.docNo = `${code}-${(used.length ? Math.max(...used) : 0) + 1}/${mm}`;
 }
 const docLabel = v => v.unsaved ? estDocNo(v) + ' ' + T('est') : (v.docNo || T('draftNo'));
-const ROLES = ['admin', 'manager', 'staff', 'viewer'];
-const roleLabel = r => T('role_' + (ROLES.includes(r) ? r : 'staff'));
-const CAN = {                       // what each role may do
-  settings: r => r === 'admin',
-  audit: r => r === 'admin',
-  report: r => r !== 'staff',
-  seeAll: r => r !== 'staff',      // staff only see their own visits and photo folders
-  editAll: r => r === 'admin' || r === 'manager',
-  create: r => r !== 'viewer',     // viewer: look and print only
-};
-const can = k => !me || CAN[k](me.role || 'staff');
+const PERMS = ['seeAll', 'create', 'editAll', 'delete', 'print', 'report', 'settings', 'audit'];
+const DEF_GROUPS = [               // ready-made groups; the admin can change the ticks, rename them, add more
+  { id: 'admin', fixed: 1, p: Object.fromEntries(PERMS.map(k => [k, true])) },
+  { id: 'manager', p: { seeAll: true, create: true, editAll: true, delete: true, print: true, report: true, settings: false, audit: false } },
+  { id: 'staff', p: { seeAll: false, create: true, editAll: false, delete: false, print: true, report: false, settings: false, audit: false } },
+  { id: 'viewer', p: { seeAll: true, create: false, editAll: false, delete: false, print: true, report: true, settings: false, audit: false } },
+];
+function groups() {
+  const g = Array.isArray(settings.groups) && settings.groups.length ? settings.groups : DEF_GROUPS;
+  return g.some(x => x.id === 'admin') ? g : [DEF_GROUPS[0], ...g];
+}
+const groupOf = id => groups().find(g => g.id === id) || groups().find(g => g.id === 'staff') || DEF_GROUPS[2];
+const groupName = g => g.name || (['admin', 'manager', 'staff', 'viewer'].includes(g.id) ? T('role_' + g.id) : g.id);
+const roleLabel = r => groupName(groupOf(r));
+const can = k => !me || me.role === 'admin' || !!groupOf(me.role || 'staff').p?.[k];
+const canDelete = v => can('delete') && canEdit(v);
 const mine = x => !x.createdBy || x.createdBy === me?.name || (x.createdByU && x.createdByU === me?.u);
 const seeIt = x => can('seeAll') || mine(x);
 const savedV = () => visits.filter(v => !v.unsaved && seeIt(v));
@@ -1128,7 +1187,7 @@ function fillEstateSelect() {
 
 /* ---------- Navigation & tabs ---------- */
 let tabs = ['home'], active = 'home';
-const PAGE_LABEL = { home: 'home', list: 'visitList', photos: 'photos', report: 'monthly', settings: 'settings', newfolder: 'newFolderTab', audit: 'auditLog' };
+const PAGE_LABEL = { home: 'home', list: 'visitList', photos: 'photos', report: 'monthly', settings: 'settings', newfolder: 'newFolderTab' };
 
 function tabLabel(k) {
   if (k.startsWith('doc:')) { const v = visits.find(x => x.id === k.slice(4)); return !v ? 'Doc' : v.unsaved ? `✚ ${T('newVisitTab')}${v.ladang ? ' · ' + v.ladang : ''}` : `Doc ${docLabel(v)} · ${v.ladang || T('noEstate')}`; }
@@ -1166,8 +1225,8 @@ window.addEventListener('popstate', async e => {
 });
 async function go(k) {
   if (k === 'new') { if (!can('create')) return toast(T('viewOnly')); return createVisit(); }
-  if (k === 'settings' && !can('settings')) k = 'home';
-  if (k === 'audit' && !can('audit')) k = 'home';
+  if (k === 'audit') { if (!can('audit')) return; await go('settings'); return showSetTab('audit'); }   // the audit log lives in Settings
+  if (k === 'settings' && !can('settings') && !can('audit')) k = 'home';
   if (k === 'report' && !can('report')) k = 'home';
   if (isPhone && !PHONE_OK(k)) k = 'photos';
   if (k.startsWith('doc:') && !visits.some(v => v.id === k.slice(4))) k = 'list';
@@ -1185,7 +1244,6 @@ async function go(k) {
   if (k === 'newfolder') renderNewFolder();
   if (k === 'report') renderReport();
   if (k === 'settings') loadSettingsForm();
-  if (k === 'audit') renderAudit();
   if (k.startsWith('doc:')) await openVisit(k.slice(4));
   renderTabs(); navPush(k);
 }
@@ -1548,7 +1606,7 @@ function setMode(edit) {
   editMode = edit;
   $('docView').style.display = edit ? 'none' : '';
   $('docEdit').style.display = edit ? '' : 'none';
-  $('btnEdit').style.display = edit ? 'none' : '';
+  $('btnEdit').style.display = edit || !canEdit(cur) ? 'none' : '';
   if (!edit) renderView(); else editDirty = false;
 }
 function renderSheets(v, sh) {
@@ -2346,15 +2404,16 @@ async function syncAll(manual = false) {
   updateNet();
   let ok = 0;
   try { if (!scriptV) { const r = await post({ action: 'ping' }); scriptV = r.v || 1; } }
-  catch (e) { syncing = false; progCheck(); updateNet(); toast(T('syncFail', e.message), 4000); return; }
-  if (scriptV < 3) { syncing = false; progCheck(); updateNet(); toast(T('oldScript'), 7000); return; }
+  catch (e) { syncing = false; if (e.message !== 'Failed to fetch') syncErr = T('syncFail', e.message); progCheck(); updateNet(); toast(T('syncFail', e.message), 4000); return; }
+  if (scriptV < 3) { syncing = false; syncErr = T('oldScript'); progCheck(); updateNet(); toast(T('oldScript'), 7000); return; }
   try { for (const id of trash) { await post({ action: 'trash', visitId: id }); settings.trashQ = settings.trashQ.filter(x => x !== id); } await saveSettings(); }
-  catch (e) { syncing = false; progCheck(); updateNet(); toast(T('syncFail', e.message), 4000); return; }
+  catch (e) { syncing = false; syncErr = T('syncFail', e.message); progCheck(); updateNet(); toast(T('syncFail', e.message), 4000); return; }
+  let failed = false;
   for (const v of todo) {
     if (v.isFolder) {
       const stamp = v.updatedAt;
       try { await syncFolder(v); if (v.updatedAt === stamp && folders.includes(v)) { v.status = 'synced'; v.syncedAt = Date.now(); await saveFolders(); } ok++; }
-      catch (e) { if (e instanceof NotReady) continue; toast(T('syncFail', e.message), 4000); break; }
+      catch (e) { if (e instanceof NotReady) continue; failed = true; syncErr = T('syncFail', e.message); toast(T('syncFail', e.message), 4000); break; }
       continue;
     }
     const stamp = v.updatedAt;
@@ -2362,19 +2421,25 @@ async function syncAll(manual = false) {
       await syncVisit(v);
       if (v.updatedAt === stamp) { v.status = 'synced'; v.syncedAt = Date.now(); logEv(v, 'synced'); await DB.put('visits', v); }
       ok++;
-    } catch (e) { if (e instanceof NotReady) continue; toast(T('syncFail', e.message), 4000); break; }
+    } catch (e) { if (e instanceof NotReady) continue; failed = true; syncErr = T('syncFail', e.message); toast(T('syncFail', e.message), 4000); break; }
   }
+  if (!failed) syncErr = '';
   syncing = false; progCheck(); updateNet(); refreshActive();
   if (ok) toast(T('syncOk', ok));
 }
+let syncErr = '', cloudErr = '';
+const syncErrMsg = () => syncErr || cloudErr;
 function updateNet() {
   const p = $('netPill'), pend = savedV().filter(v => v.status === 'pending').length + folders.filter(f => f.status === 'pending').length;
   const w = pend ? ' · ' + T('waiting', pend) : '';
-  if (!navigator.onLine) { p.className = 'pill off'; p.textContent = `● ${T('offline')}${w}`; }
-  else if (prog.t) { p.className = 'pill'; p.textContent = `${T('syncingNow')} ${progPct()}%`; }
-  else if (syncing) { p.className = 'pill'; p.textContent = T('syncingNow'); }
-  else { p.className = 'pill'; p.textContent = `● ${T('online')}${w}`; }
-  if (cloudOn() && cloudPending) p.textContent += ` · ☁ ${cloudPending}`;
+  const cw = cloudOn() && cloudPending ? ` · ☁ ${cloudPending}` : '';
+  const set = (cls, txt) => { p.className = 'pill'; p.innerHTML = `<span class="dot ${cls}"></span>${esc(txt)}`; p.title = cls === 'err' ? syncErrMsg() : ''; };
+  if (!navigator.onLine) set('off', `${T('offline')}${w}${cw}`);
+  else if (prog.t) set('run', `${T('syncingNow').replace(/^\S+\s*/, '')} ${progPct()}%`);
+  else if (syncing) set('run', T('syncingNow').replace(/^\S+\s*/, ''));
+  else if (syncErrMsg()) set('err', `${T('syncProblem')}${w}`);
+  else if (pend || cw) set('wait', `${T('online')}${w}${cw}`);
+  else set('ok', T('online'));
   const np = $('navPending'), nd = savedV().filter(v => v.status !== 'synced').length;
   np.style.display = nd ? '' : 'none'; np.textContent = nd;
 }
@@ -2385,6 +2450,13 @@ function refreshActive() {
 }
 window.addEventListener('online', async () => { updateNet(); await cloudSync(); syncAll(); });
 window.addEventListener('offline', updateNet);
+$('netPill').onclick = async () => {              // tap the status: see the problem, or send now
+  if (!navigator.onLine) return toast(T('noNet'));
+  const m = syncErrMsg();
+  if (m && !confirm(`${m}\n\n${T('tryAgainQ')}`)) return;
+  syncErr = cloudErr = ''; scriptV = 0; updateNet();
+  await cloudSync(true); await syncAll(true);
+};
 const portalVis = () => document.body.classList.toggle('is-off', !navigator.onLine);
 window.addEventListener('online', portalVis); window.addEventListener('offline', portalVis); portalVis();
 let instEvt = null;
@@ -2488,12 +2560,19 @@ $('addTit').onclick = () => {
 $('addTitName').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('addTit').click(); } });
 let setTab = 'general';
 function showSetTab(k) {
+  const okTab = x => { const b = document.querySelector(`#stabs button[data-st="${x}"]`); return b && b.style.display !== 'none'; };
+  if (!okTab(k)) k = ['general', 'audit'].find(okTab) || k;
   setTab = k;
+  document.querySelectorAll('#stabs button').forEach(b => b.classList.toggle('grp-on', !b.classList.contains('sub') && b.dataset.st === 'users' && k === 'groups'));
+  $('setSaveRow').style.display = ['users', 'groups', 'audit', 'backup'].includes(k) ? 'none' : '';
+  if (k === 'audit') renderAudit();
+  if (k === 'groups') { gEdit = null; renderGroups(); }
   if (k === 'backup') { const t = localStorage.getItem('ll.lastBackup'); $('bkLast').textContent = t ? T('bkLast', new Date(+t).toLocaleString()) : ''; }
   document.querySelectorAll('#stabs button').forEach(b => b.classList.toggle('on', b.dataset.st === k));
   document.querySelectorAll('.spane').forEach(p => p.classList.toggle('on', p.dataset.sp === k));
 }
 document.querySelectorAll('#stabs button').forEach(b => b.onclick = () => showSetTab(b.dataset.st));
+document.querySelectorAll('.utabs button').forEach(b => b.onclick = () => showSetTab(b.dataset.ut));
 $('addEst').onclick = () => {
   const n = $('addEstName').value.trim().toUpperCase(); if (!n) return;
   estEdit.push(n); $('addEstName').value = ''; renderListEditors(); $('addEstName').focus();
@@ -2588,7 +2667,8 @@ const findUser = u => settings.users.find(x => x.u === u.trim().toLowerCase());
 
 function renderUsers() {
   const t = $('tblUsers');
-  t.innerHTML = `<thead><tr><th>${T('username')}</th><th>${T('fullName')}</th><th>${T('docCode')}</th><th>${T('role')}</th><th>${T('status')}</th><th></th></tr></thead>`;
+  t.innerHTML = `<thead><tr><th>${T('username')}</th><th>${T('fullName')}</th><th>${T('docCode')}</th><th>${T('groupCol')}</th><th>${T('status')}</th><th></th></tr></thead>`;
+  const cur0 = $('nuRole').value; $('nuRole').innerHTML = groups().map(g => `<option value="${esc(g.id)}">${esc(groupName(g))}</option>`).join(''); $('nuRole').value = groups().some(g => g.id === cur0) ? cur0 : 'staff';
   const tb = document.createElement('tbody');
   const admins = () => settings.users.filter(x => x.role === 'admin' && !x.disabled).length;
   settings.users.forEach(u => {
@@ -2597,7 +2677,7 @@ function renderUsers() {
     tr.innerHTML = `<td><b>${esc(u.u)}</b>${self ? ` <span class="muted small">(${esc(T('you'))})</span>` : ''}</td>
       <td><input class="f-in uname" style="min-width:170px;padding:6px 8px;text-transform:uppercase"></td>
       <td><input class="f-in ucode" maxlength="6" style="width:80px;text-transform:uppercase;padding:6px 8px"> <span class="muted small">${esc((u.code || nameCode(u.name)).toUpperCase())}-1/${+todayKL().slice(5, 7)}</span></td>
-      <td><select class="f-in urole" style="padding:6px 8px">${ROLES.map(r => `<option value="${r}" ${r === (u.role || 'staff') ? 'selected' : ''}>${esc(roleLabel(r))}</option>`).join('')}</select></td>
+      <td><select class="f-in urole" style="padding:6px 8px">${groups().map(g => `<option value="${esc(g.id)}" ${g.id === groupOf(u.role || 'staff').id ? 'selected' : ''}>${esc(groupName(g))}</option>`).join('')}</select></td>
       <td>${u.disabled ? `<span class="bdg-w">${esc(T('disabledLbl'))}</span>` : `<span class="muted small">${esc(T('activeLbl'))}</span>`}</td>
       <td style="text-align:right;white-space:nowrap"><button class="btn-ghost" data-a="reset">🔑 ${T('resetPass')}</button>
         <button class="btn-ghost" data-a="dis">${u.disabled ? '✓ ' + T('enableUser') : '⛔ ' + T('disableUser')}</button>
@@ -2640,6 +2720,44 @@ function renderUsers() {
   });
   t.appendChild(tb);
 }
+let gEdit = null;
+const GCOL = [['#dbeafe', '#1e40af'], ['#dcfce7', '#166534'], ['#fef3c7', '#92400e'], ['#f1f5f9', '#475569'], ['#fce7f3', '#9d174d'], ['#ede9fe', '#5b21b6'], ['#ccfbf1', '#115e59']];
+function renderGroups() {
+  if (!gEdit) gEdit = JSON.parse(JSON.stringify(groups()));
+  const cnt = id => settings.users.filter(u => (u.role || 'staff') === id).length;
+  const t = $('tblGroups');
+  t.innerHTML = `<thead><tr><th style="min-width:190px">${esc(T('groupCol'))}</th>${gEdit.map((g, i) => `<th><span class="gchip" style="background:${GCOL[i % GCOL.length][0]};color:${GCOL[i % GCOL.length][1]}">${esc(groupName(g))}</span><div class="muted small" style="font-weight:500;margin-top:3px">${esc(T('nUsers', cnt(g.id)))}</div></th>`).join('')}</tr></thead><tbody>` +
+    PERMS.map(k => `<tr><td>${esc(T('perm_' + k))}</td>${gEdit.map((g, i) => `<td><input type="checkbox" data-g="${i}" data-k="${k}" ${g.fixed || g.p?.[k] ? 'checked' : ''} ${g.fixed ? 'disabled' : ''}></td>`).join('')}</tr>`).join('') +
+    `<tr><td></td>${gEdit.map((g, i) => `<td style="white-space:nowrap">${g.fixed ? `<span class="muted small">🔒 ${esc(T('fixedLbl'))}</span>` : `<button class="btn-ghost sm" data-ren="${i}">✏ ${esc(T('rename'))}</button> <button class="btn-ghost sm" data-delg="${i}" title="${esc(T('delete'))}" style="color:var(--red)">🗑</button>`}</td>`).join('')}</tr></tbody>`;
+  t.querySelectorAll('input[type=checkbox]').forEach(c => c.onchange = () => { const g = gEdit[+c.dataset.g]; (g.p ||= {})[c.dataset.k] = c.checked; });
+  t.querySelectorAll('[data-ren]').forEach(b => b.onclick = () => {
+    const g = gEdit[+b.dataset.ren], n = prompt(T('renameQ'), groupName(g)); if (n === null) return;
+    const v = n.trim(); if (!v) return; if (gEdit.some(x => x !== g && groupName(x).toLowerCase() === v.toLowerCase())) return toast(T('groupExists'));
+    g.name = v; renderGroups();
+  });
+  t.querySelectorAll('[data-delg]').forEach(b => b.onclick = () => {
+    const g = gEdit[+b.dataset.delg];
+    if (cnt(g.id)) return toast(T('groupHasUsers', cnt(g.id)), 4000);
+    if (!confirm(T('delGroupQ', groupName(g)))) return;
+    gEdit = gEdit.filter(x => x !== g); renderGroups();
+  });
+}
+$('ngAdd').onclick = () => {
+  const v = $('ngName').value.trim(); if (!v) return $('ngName').focus();
+  if (!gEdit) gEdit = JSON.parse(JSON.stringify(groups()));
+  if (gEdit.some(x => groupName(x).toLowerCase() === v.toLowerCase())) return toast(T('groupExists'));
+  gEdit.push({ id: 'g' + uid(), name: v, p: { seeAll: false, create: true, editAll: false, delete: false, print: true, report: false, settings: false, audit: false } });
+  $('ngName').value = ''; renderGroups();
+};
+$('ngName').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('ngAdd').click(); } });
+$('gSave').onclick = async () => {
+  if (!gEdit) return;
+  const before = JSON.stringify(groups());
+  settings.groups = gEdit.map(g => ({ id: g.id, ...(g.name ? { name: g.name } : {}), ...(g.fixed ? { fixed: 1 } : {}), p: Object.fromEntries(PERMS.map(k => [k, !!(g.fixed || g.p?.[k])])) }));
+  await saveSettings(); gEdit = null; renderGroups(); renderUsers(); afterLogin();
+  if (JSON.stringify(groups()) !== before) audit('groups', '', groups().map(g => groupName(g) + ': ' + PERMS.filter(k => g.p?.[k]).length).join(', '));
+  toast(T('saved'));
+};
 $('nuAdd').onclick = async () => {
   const u = $('nuUser').value.trim().toLowerCase(), name = $('nuName').value.trim().toUpperCase(), pw = $('nuPass').value;
   if (!u || !name || !pw) return toast(T('fillAll'));
@@ -2734,11 +2852,18 @@ function afterLogin() {
   $('userName').textContent = me.u; $('tbRole').textContent = roleLabel(me.role).toUpperCase();
   $('mName').textContent = meName(); $('mUser').textContent = `${me.u} · ${roleLabel(me.role)}`;
   const show = (sel, on) => { const el = document.querySelector(sel); if (el) el.style.display = on ? '' : 'none'; };
-  show('[data-nav=settings]', can('settings') && !isPhone); show('[data-nav=audit]', can('audit') && !isPhone);
+  show('[data-nav=settings]', (can('settings') || can('audit')) && !isPhone);
+  document.querySelectorAll('#stabs button').forEach(bt => {
+    const k = bt.dataset.st;
+    bt.style.display = (k === 'audit' ? can('audit') : (k === 'users' || k === 'groups') ? me.role === 'admin' : can('settings')) ? '' : 'none';
+  });
   show('[data-nav=report]', can('report') && !isPhone); show('[data-nav=home]', !isPhone);
   show('.side [data-t=navSystem]', (can('settings') || can('audit')) && !isPhone);
   document.body.classList.toggle('ro', !can('create'));
-  const ok = k => !((k === 'settings' && !can('settings')) || (k === 'audit' && !can('audit')) || (k === 'report' && !can('report')));
+  document.body.classList.toggle('noprint', !can('print'));
+  document.body.classList.toggle('nodel', !can('delete'));
+  document.body.classList.toggle('isadmin', me.role === 'admin');
+  const ok = k => !((k === 'settings' && !can('settings') && !can('audit')) || (k === 'report' && !can('report')));
   if (tabs.some(k => !ok(k))) { tabs = tabs.filter(ok); if (!tabs.length) tabs = [isPhone ? 'photos' : 'home']; if (!ok(active)) go(tabs[0]); else renderTabs(); }
   fillDatalists();
 }
@@ -2757,7 +2882,7 @@ $('mLogout').onclick = async () => {
   sessionStorage.removeItem('ll.session'); localStorage.removeItem('ll.session'); me = null;
   const t = getToken(); setToken(null); if (t && navigator.onLine) rpc('sv_logout', { p_token: t }).catch(() => {});
   await openLogin();
-  if ((active === 'settings' && !can('settings')) || (active === 'audit' && !can('audit')) || (active === 'report' && !can('report'))) go(isPhone ? 'photos' : 'home');
+  if ((active === 'settings' && !can('settings') && !can('audit')) || (active === 'report' && !can('report'))) go(isPhone ? 'photos' : 'home');
 };
 $('mPass').onclick = async () => {
   $('userMenu').classList.remove('open');
@@ -2775,7 +2900,7 @@ const CLOUD = {
   url: 'https://bjcjxmcvreegjipdxzks.supabase.co',              // Supabase → Settings → API → Project URL
   key: 'sb_publishable_bcFfS7DJ7Reop7imPPYaJQ_gUio0R-7',          // Supabase → Settings → API Keys → Publishable key
 };
-const SHARED_KEYS = ['company', 'titles', 'rev', 'header', 'estates', 'logo', 'syncUrl', 'syncKey', 'allowRemember', 'pdfLang'];
+const SHARED_KEYS = ['company', 'titles', 'rev', 'header', 'estates', 'logo', 'syncUrl', 'syncKey', 'allowRemember', 'pdfLang', 'groups'];
 const PH_BLOB = new Blob(['<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#e5e7eb"/><text x="200" y="160" font-size="22" text-anchor="middle" fill="#6b7280" font-family="sans-serif">Photo not downloaded yet</text></svg>'], { type: 'image/svg+xml' });
 let cloud = { seq: 0, pushed: {}, drive: {}, linked: false, force: {} };
 let cloudBusy = false, cloudPending = 0, cloudTimer = null, cloudWarned = false;
@@ -2818,7 +2943,7 @@ async function localDocs() {
   for (const v of visits) if (!v.unsaved) out.push({ kind: 'visit', id: v.id, data: clean(v), at: v.updatedAt || 0 });
   for (const f of folders) out.push({ kind: 'folder', id: f.id, data: clean(f), at: f.updatedAt || 0 });
   for (const u of settings.users) out.push({ kind: 'user', id: u.u, data: userDoc(u), extra: u._pw ? { salt: u.salt, hash: u.hash } : null, ref: u });
-  if (me?.role === 'admin') out.push({ kind: 'settings', id: 'main', data: sharedSettings() });
+  if (me?.role === 'admin' || can('settings')) out.push({ kind: 'settings', id: 'main', data: sharedSettings() });
   out.held = new Set();          // photos in a new visit that is not saved yet: not sent, but NOT deleted either
   for (const p of await DB.all('photos')) { if (unsavedIds.has(p.visitId)) out.held.add('photo:' + p.id); else out.push({ kind: 'photo', id: p.id, data: photoDoc(p), rec: p }); }
   return out;
@@ -2913,8 +3038,10 @@ async function cloudPull(token) {
       cloud.pushed[key] = sig(userDoc(d.data)); changed = true;
     } else if (d.kind === 'settings') {
       if (!firstLink && cloud.pushed[key] && cloud.pushed[key] !== sig(sharedSettings()) && !cloud.force[key]) continue;
+      const g0 = JSON.stringify(settings.groups || null);
       SHARED_KEYS.forEach(k => { if (d.data[k] !== undefined && d.data[k] !== null) settings[k] = d.data[k]; });
       cloud.pushed[key] = sig(sharedSettings()); changed = true;
+      if (me && JSON.stringify(settings.groups || null) !== g0) setTimeout(afterLogin, 0);     // new ticks for my group
     }
     delete cloud.force[key];
   }
@@ -3011,7 +3138,7 @@ async function cloudSync(manual = false) {
     let res = { changed: false };
     if (!cloud.linked) res = await cloudPull(token);        // joining: take the shared data first
     await relinkPhotos();
-    await cloudPush(token);
+    await cloudPush(token); cloudErr = '';
     try { await auditFlush(token); } catch (e) { /* audit table not set up yet: keep the entries and try again later */ }
     const r2 = await cloudPull(token);
     if (await relinkPhotos()) { r2.changed = true; scheduleCloud(1500); }
@@ -3019,6 +3146,7 @@ async function cloudSync(manual = false) {
     if (res.needPhotos || r2.needPhotos) downloadMissingPhotos();
   } catch (e) {
     if (e.message === 'SESSION') { setToken(null); toast(T('sessionEnded'), 5000); cloudBusy = false; $('mLogout').click(); return; }
+    if (e.message !== 'NET') cloudErr = T('cloudFail', e.message);
     if (e.message !== 'NET' && manual) toast(T('cloudFail', e.message), 5000);
   } finally { cloudBusy = false; progCheck(); updateNet(); }
 }
